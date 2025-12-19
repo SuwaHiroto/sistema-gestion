@@ -1,0 +1,179 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Cliente;  // Modelo en Plural
+use App\Models\Servicio; // Modelo en Plural
+use App\Models\User;      // Necesario para el admin
+
+class ClienteController extends Controller
+{
+    /**
+     * Dashboard del Cliente (Con redirección forzada).
+     * ESTE ES SOLO PARA EL ROL 'CLIENTE'
+     */
+    public function index()
+    {
+        $user = Auth::user();
+
+        // Si por error entra un admin aquí, lo mandamos a su dashboard
+        if ($user->rol === 'admin') {
+            return redirect()->route('dashboard');
+        }
+
+        // 1. Buscamos el perfil del cliente asociado al usuario
+        $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
+
+        // 2. Lógica de Redirección:
+        if (!$cliente || empty($cliente->nombres)) {
+            return redirect()->route('cliente.complete.show');
+        }
+
+        // 3. Si ya tiene perfil, mostramos su Dashboard con sus servicios
+        $servicios = Servicio::where('id_cliente', $cliente->id_cliente)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('cliente.index', compact('servicios'));
+    }
+
+    /**
+     * Lista de Clientes para el ADMINISTRADOR
+     * ESTE ES EL QUE USA LA VISTA 'admin.clientes.index'
+     */
+    public function indexAdmin()
+    {
+        // Solo Admin puede entrar aquí
+        if (Auth::user()->rol !== 'admin') {
+            abort(403, 'Acceso denegado');
+        }
+
+        // Traemos todos los clientes con su usuario
+        $clientes = Cliente::with('usuario')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return view('admin.clientes.index', compact('clientes'));
+    }
+
+    /**
+     * Muestra el formulario para completar datos.
+     */
+    public function showCompleteProfile()
+    {
+        return view('auth.complete-profile');
+    }
+
+    /**
+     * Guarda los datos del perfil y redirige al dashboard.
+     */
+    public function storeCompleteProfile(Request $request)
+    {
+        $request->validate([
+            'nombres' => 'required|string|max:255',
+            'telefono' => 'required|string|max:20',
+            'direccion' => 'required|string',
+            'dni' => 'nullable|digits:8',
+        ]);
+
+        $user = Auth::user();
+
+        Cliente::updateOrCreate(
+            ['id_usuario' => $user->id_usuario],
+            [
+                'nombres' => $request->nombres,
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+                'correo' => $user->email,
+                'estado' => true
+            ]
+        );
+
+        return redirect()->route('cliente.index')->with('success', '¡Perfil actualizado! Ya puedes solicitar servicios.');
+    }
+
+    /**
+     * Guardar nueva solicitud de servicio (Cliente).
+     */
+    public function store(Request $request)
+    {
+        $request->validate(['descripcion_solicitud' => 'required|min:5']);
+
+        $user = Auth::user();
+        $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
+
+        Servicio::create([
+            'id_cliente' => $cliente->id_cliente,
+            'descripcion_solicitud' => $request->descripcion_solicitud,
+            'estado' => 'PENDIENTE',
+            'fecha_solicitud' => now(),
+        ]);
+
+        return back()->with('success', 'Tu solicitud ha sido enviada correctamente.');
+    }
+    public function storeAdmin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:usuarios,email',
+            'password' => 'required|min:6',
+            'nombres' => 'required|string',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $user = User::create([
+                'email' => $request->email,
+                'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+                'rol' => 'cliente',
+                'activo' => true,
+                'name' => $request->nombres
+            ]);
+
+            // El evento booted ya crea el cliente, pero lo actualizamos con los datos extra
+            $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
+            $cliente->update([
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+                'estado' => $request->estado ?? true
+            ]);
+        });
+
+        return redirect()->route('clientes.index')->with('success', 'Cliente registrado correctamente');
+    }
+
+    /**
+     * Update para Admin
+     */
+    public function updateAdmin(Request $request, $id)
+    {
+        $cliente = Cliente::findOrFail($id);
+        $usuario = User::findOrFail($cliente->id_usuario);
+
+        $request->validate([
+            'email' => 'required|email|unique:usuarios,email,' . $usuario->id_usuario . ',id_usuario',
+            'nombres' => 'required|string',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $cliente, $usuario) {
+            $usuario->update([
+                'email' => $request->email,
+                'name' => $request->nombres,
+                'activo' => $request->estado // Si desactivan cliente, desactivan login
+            ]);
+
+            if ($request->filled('password')) {
+                $usuario->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+            }
+
+            $cliente->update([
+                'nombres' => $request->nombres,
+                'telefono' => $request->telefono,
+                'direccion' => $request->direccion,
+                'estado' => $request->estado
+            ]);
+        });
+
+        return redirect()->route('clientes.index')->with('success', 'Datos del cliente actualizados.');
+    }
+}

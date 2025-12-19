@@ -1,0 +1,282 @@
+/* =========================================================
+   CLIENTES - Estilo moderno (alineado visualmente con Servicios)
+   ========================================================= */
+
+/* Toast Notifications */
+.toast-notification {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  pointer-events: none;
+}
+
+.toast-notification .toast-content {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin: 0.5rem;
+  pointer-events: all;
+}
+
+.toast-notification i {
+  font-size: 1.25rem;
+  margin-right: 12px;
+}
+
+.toast-notification span {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.toast-success {
+  background-color: #f0fdf4;
+  border-left: 4px solid #22c55e;
+}
+
+.toast-success i {
+  color: #22c55e;
+}
+
+.toast-error {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+}
+
+.toast-error i {
+  color: #ef4444;
+}
+
+.toast-info {
+  background-color: #eff6ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.toast-info i {
+  color: #3b82f6;
+}
+
+:root {
+  --primary: #0d6efd;
+  --primary-dark: #0b5ed7;
+  --bg-soft: #f8f9fa;
+  --text-muted: #6c757d;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --radius: 14px;
+  --transition: all .25s ease;
+}
+
+/* Contenedor */
+.clientes-module {
+  padding-bottom: 2rem;
+  animation: fadeIn 0.45s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px)
+  }
+
+  to {
+    opacity: 1;
+    transform: none
+  }
+}
+
+/* Card */
+.clientes-module .card {
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* Header */
+.clientes-module .card-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  padding: 1rem 1.3rem;
+  border: none;
+}
+
+.clientes-module .card-header h5 {
+  color: #fff;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Nuevo botón */
+#btnNuevoCliente {
+  background: var(--primary-dark);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: .45rem 1.05rem;
+  border: none;
+  transition: var(--transition);
+}
+
+#btnNuevoCliente:hover {
+  background: white;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-dark) !important;
+}
+
+/* Buscador */
+#buscadorClientes {
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+  padding: .5rem .85rem;
+  transition: var(--transition);
+}
+
+#buscadorClientes:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 .18rem rgba(13, 110, 253, 0.18);
+}
+
+/* Tabs */
+.nav-tabs .nav-link {
+  border: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+  background: transparent;
+  font-weight: 600;
+}
+
+/* Table */
+.table {
+  margin-bottom: 0;
+  font-size: .95rem;
+}
+
+.table thead {
+  background: #f1f3f5;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-size: .78rem;
+}
+
+.table-hover tbody tr:hover {
+  background: rgba(13, 110, 253, 0.05);
+  transition: var(--transition);
+}
+
+.table td,
+.table th {
+  vertical-align: middle;
+  padding: .75rem .8rem;
+}
+
+/* Badges */
+.badge {
+  font-weight: 600;
+}
+
+/* Botones de acción - IGUALES A SERVICIOS */
+.btn-acciones {
+  border-radius: 8px;
+  padding: .32rem .55rem;
+  font-size: .78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-width: 1px !important;
+  transition: var(--transition);
+  background: transparent;
+}
+
+/* Ver */
+.btn-ver {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-ver {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Editar (amarillo suave) */
+.btn-editar {
+  border: 1px solid #ffc107;
+  color: #b68a00;
+}
+
+.btn-editar {
+  background: #ffc107;
+  color: #212529;
+}
+
+/* Desactivar (rojo) / Activar (verde) */
+.btn-desactivar {
+  border: 1px solid #dc3545;
+  color: #dc3545;
+}
+
+.btn-desactivar {
+  background: #dc3545;
+  color: #fff;
+}
+
+.btn-activar {
+  border: 1px solid #198754;
+  color: #198754;
+}
+
+.btn-activar {
+  background: #198754;
+  color: #fff;
+}
+
+/* icon size */
+.btn-acciones i {
+  font-size: .95rem;
+}
+
+/* Modal */
+.modal-content {
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: none;
+}
+
+.modal-header {
+  background: var(--bg-soft);
+  border-bottom: none;
+}
+
+.modal-title {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+/* Form controls */
+.form-control {
+  border-radius: 10px;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 .18rem rgba(13, 110, 253, 0.12);
+}
+
+/* Toasts */
+.custom-toast {
+  background-color: var(--primary-dark) !important;
+}
+
+/* Responsive tweaks */
+@media (max-width:768px) {
+  #btnNuevoCliente {
+    padding: .35rem .8rem;
+    font-size: .9rem;
+  }
+}

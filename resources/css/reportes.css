@@ -1,0 +1,38 @@
+/* Estilos para el módulo de reportes */
+.reportes-module {
+    padding: 1rem;
+}
+
+.reportes-module .card {
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+#r_resumen .card {
+    background-color: #f8f9fa;
+    transition: transform 0.2s;
+}
+
+#r_resumen .card:hover {
+    transform: translateY(-2px);
+}
+
+#r_tablaDetalle {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+#r_tablaDetalle th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table-responsive {
+    min-height: 300px;
+}
+
+@media (max-width: 768px) {
+    #r_resumen .card {
+        margin-bottom: 1rem;
+    }
+}

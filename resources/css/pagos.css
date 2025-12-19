@@ -1,0 +1,30 @@
+/* Estilos para el módulo de pagos */
+.pagos-module .table-responsive {
+  min-height: 300px;
+}
+
+.pagos-module .card {
+  border-radius: 8px;
+}
+
+/* Estilos para estados de pago */
+.pago-pendiente {
+  color: var(--bs-warning);
+}
+
+.pago-completado {
+  color: var(--bs-success);
+}
+
+.pago-parcial {
+  color: var(--bs-info);
+}
+
+/* Animaciones para los montos */
+.monto-total {
+  transition: color 0.2s;
+}
+
+.monto-total:hover {
+  color: var(--bs-primary);
+}

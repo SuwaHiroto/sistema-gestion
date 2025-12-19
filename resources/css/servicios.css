@@ -1,0 +1,73 @@
+:root {
+  --primary: #0d6efd;
+  --primary-dark: #0b5ed7;
+  --bg-soft: #f8f9fa;
+  --text-muted: #6c757d;
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --radius: 14px;
+  --transition: all .25s ease;
+}
+
+/* Estilos para el módulo de servicios */
+.servicios-module .table-responsive {
+  min-height: 300px;
+}
+
+.servicios-module .card {
+  border-radius: 8px;
+}
+
+.servicios-module .btn-outline-secondary:hover {
+  background-color: var(--app-bg);
+}
+
+/* Estados de servicio */
+.estado-pendiente {
+  color: var(--bs-warning);
+}
+
+.estado-en-progreso {
+  color: var(--bs-info);
+}
+
+.estado-completado {
+  color: var(--bs-success);
+}
+
+.estado-cancelado {
+  color: var(--bs-danger);
+}
+
+.btn-servicios {
+  cursor: pointer;
+  background-color: var(--primary-dark);
+  color: white;
+  border-radius: 15px;
+}
+
+.btn-servicios:hover {
+  background-color: white;
+  color: var(--primary-dark);
+}
+
+.btn-primary {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-primary:hover {
+  background-color: white;
+  color: var(--primary-dark);
+  border: 1px solid var(--primary-dark) !important;
+}
+
+.servicios-anulados{
+  background-color: var(--bg-soft);
+  color: var(--text-muted);
+  border-radius: 15px;
+}
+
+.servicios-anulados:hover{
+  background-color: var(--primary-dark);
+  color: white;
+}

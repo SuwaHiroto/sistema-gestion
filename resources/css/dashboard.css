@@ -1,0 +1,33 @@
+body {
+  background-color: var(--app-bg);
+  font-family: "Poppins", sans-serif;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--theme-900) !important;
+  transition: color 0.3s ease;
+  cursor: pointer !important;
+}
+
+.dashboard-card {
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.footer {
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.active {
+  color: var(--theme-900) !important;
+}
+.logo-navbar {
+  width: 60px;
+  height: 35px;
+}
