@@ -1,73 +1,272 @@
 @extends('layouts.admin')
 
 @section('content')
-    <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-800">Reportes y Métricas</h2>
-        <p class="text-sm text-gray-500">Análisis de rendimiento del mes actual.</p>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @media print {
+
+            /* Ocultar TODO el contenido de la web por defecto */
+            body * {
+                visibility: hidden;
+            }
+
+            /* Hacer visible SOLO nuestro contenedor de reporte y sus hijos */
+            #reporte-imprimible,
+            #reporte-imprimible * {
+                visibility: visible;
+            }
+
+            /* Posicionar el reporte en la esquina absoluta del papel */
+            #reporte-imprimible {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+
+            /* Mostrar elementos exclusivos de impresión (como el encabezado formal) */
+            .print-only {
+                display: block !important;
+            }
+
+            /* Ocultar elementos exclusivos de pantalla (botones) */
+            .no-print {
+                display: none !important;
+            }
+
+            /* Forzar impresión de colores de fondo (importante para gráficas y tarjetas) */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* Evitar cortes feos en tablas y gráficos */
+            tr,
+            img,
+            canvas,
+            .break-inside-avoid {
+                page-break-inside: avoid;
+            }
+
+            /* Ajuste de tipografía para papel */
+            body {
+                font-size: 12pt;
+                color: black;
+            }
+        }
+
+        /* Ocultar encabezado de impresión en pantalla normal */
+        .print-only {
+            display: none;
+        }
+    </style>
+
+    <div class="flex justify-between items-end mb-6 no-print">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-800">Panel de Métricas</h2>
+            <p class="text-sm text-gray-500">Vista general del rendimiento del sistema.</p>
+        </div>
+        <button onclick="window.print()"
+            class="bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-6 rounded-lg shadow-lg flex items-center gap-2 transition transform hover:-translate-y-0.5">
+            <i class="fas fa-print"></i> Imprimir Reporte Oficial
+        </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div id="reporte-imprimible" class="w-full">
 
-        <!-- Reporte de Ingresos por Mes (Tabla Simple) -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-chart-line text-green-500"></i> Ingresos Recientes
-            </h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
-                        <tr>
-                            <th class="p-3">Mes</th>
-                            <th class="p-3 text-right">Cant. Pagos</th>
-                            <th class="p-3 text-right">Total (S/)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        @foreach ($ingresosPorMes as $ingreso)
-                            <tr>
-                                <td class="p-3 font-medium">
-                                    {{ \Carbon\Carbon::createFromFormat('m', $ingreso->mes)->format('F') }}</td>
-                                <td class="p-3 text-right">{{ $ingreso->cantidad }}</td>
-                                <td class="p-3 text-right font-bold text-green-600">S/
-                                    {{ number_format($ingreso->total, 2) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+        <div class="print-only mb-8 text-center border-b-2 border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold uppercase tracking-widest text-gray-900">Reporte Mensual de Servicios</h1>
+            <p class="text-gray-600 font-medium text-lg mt-1">ElectroManager S.A.C.</p>
+            <div class="flex justify-between text-xs text-gray-500 mt-4 px-10">
+                <span>Generado por: {{ Auth::user()->name ?? 'Administrador' }}</span>
+                <span>Fecha de Emisión: {{ now()->format('d/m/Y H:i A') }}</span>
             </div>
         </div>
 
-        <!-- Reporte de Técnicos (Top 5) -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-trophy text-yellow-500"></i> Top Técnicos (Servicios Finalizados)
-            </h3>
-            <ul class="space-y-4">
-                @foreach ($topTecnicos as $tec)
-                    <li class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                {{ substr($tec->nombres, 0, 1) }}
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">{{ $tec->nombres }}
-                                {{ $tec->apellido_paterno }}</span>
-                        </div>
-                        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">
-                            {{ $tec->servicios_count }} servicios
-                        </span>
-                    </li>
-                @endforeach
-            </ul>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 break-inside-avoid">
+            <div
+                class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-green-500 relative overflow-hidden">
+                <div class="flex justify-between items-center relative z-10">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ingresos (Año Actual)</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">S/ {{ number_format($totalIngresos, 2) }}</h3>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full text-green-600">
+                        <i class="fas fa-wallet text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500 relative overflow-hidden">
+                <div class="flex justify-between items-center relative z-10">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Servicios Finalizados</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ $serviciosFinalizados }}</h3>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full text-blue-600">
+                        <i class="fas fa-clipboard-check text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-yellow-500 relative overflow-hidden">
+                <div class="flex justify-between items-center relative z-10">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">En Proceso / Pendientes</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ $serviciosPendientes }}</h3>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full text-yellow-600">
+                        <i class="fas fa-clock text-xl"></i>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 break-inside-avoid">
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
+                <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2 border-b pb-2">
+                    <i class="fas fa-chart-bar text-indigo-500"></i> Facturación Mensual
+                </h3>
+                <div class="relative w-full" style="height: 300px;">
+                    <canvas id="ingresosChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2">
+                    <i class="fas fa-trophy text-yellow-500"></i> Top Rendimiento
+                </h3>
+                <ul class="space-y-3">
+                    @forelse ($topTecnicos as $index => $tec)
+                        <li class="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 flex justify-center font-bold text-gray-400 text-sm">
+                                    #{{ $index + 1 }}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-gray-700 text-sm">
+                                        {{ $tec->nombres }} {{ substr($tec->apellido_paterno, 0, 1) }}.
+                                    </div>
+                                    <div class="text-xs text-gray-400">{{ $tec->especialidad }}</div>
+                                </div>
+                            </div>
+                            <span
+                                class="bg-white text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-gray-200 shadow-sm">
+                                {{ $tec->servicios_count }}
+                            </span>
+                        </li>
+                    @empty
+                        <li class="text-center text-gray-400 text-sm py-4">Sin datos registrados.</li>
+                    @endforelse
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden break-inside-avoid">
+            <div class="p-4 bg-gray-50 border-b border-gray-200">
+                <h3 class="font-bold text-gray-800 text-sm uppercase">Detalle de Ingresos por Mes</h3>
+            </div>
+            <table class="w-full text-sm text-left">
+                <thead class="bg-white text-gray-600 uppercase text-xs border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3">Mes</th>
+                        <th class="px-6 py-3 text-center">N° Transacciones</th>
+                        <th class="px-6 py-3 text-right">Total Recaudado</th>
+                        <th class="px-6 py-3 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($ingresosPorMes as $ingreso)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-3 font-medium text-gray-800 capitalize">
+                                {{ \Carbon\Carbon::create(null, (int) $ingreso->mes, 1)->locale('es')->isoFormat('MMMM') }}
+                            </td>
+                            <td class="px-6 py-3 text-center text-gray-600">
+                                {{ $ingreso->cantidad }}
+                            </td>
+                            <td class="px-6 py-3 text-right font-bold text-gray-800">
+                                S/ {{ number_format($ingreso->total, 2) }}
+                            </td>
+                            <td class="px-6 py-3 text-center">
+                                <span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                                    Validado
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                                No hay registros de ingresos este año.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <div class="print-only mt-8 text-center text-xs text-gray-400 border-t border-gray-200 pt-4">
+            <p>Este documento es un reporte generado automáticamente por el sistema.</p>
+        </div>
     </div>
 
-    <!-- Botón de Exportar (Simulado) -->
-    <div class="mt-8 text-right">
-        <button onclick="window.print()"
-            class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded shadow inline-flex items-center gap-2">
-            <i class="fas fa-print"></i> Imprimir Reporte
-        </button>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('ingresosChart').getContext('2d');
+
+            // Degradado profesional
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(79, 70, 229, 0.8)');
+            gradient.addColorStop(1, 'rgba(79, 70, 229, 0.1)');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: @json($labelsGrafico),
+                    datasets: [{
+                        label: 'Ingresos (S/)',
+                        data: @json($dataGrafico),
+                        backgroundColor: gradient,
+                        borderColor: '#4338ca',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                borderDash: [2, 2]
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return 'S/ ' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 @endsection

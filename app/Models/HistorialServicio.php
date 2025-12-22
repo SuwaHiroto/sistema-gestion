@@ -25,7 +25,8 @@ class HistorialServicio extends Model
     ];
 
     protected $casts = [
-        'fecha_cambio' => 'datetime'
+        'fecha_cambio' => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function servicio()

@@ -8,7 +8,7 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TecnicoPanelController;
-use App\Http\Controllers\MaterialController; 
+use App\Http\Controllers\MaterialController;
 
 
 
@@ -51,6 +51,9 @@ Route::middleware([
     Route::get('/clientes', [ClienteController::class, 'indexAdmin'])->name('clientes.index');
     Route::post('/clientes', [ClienteController::class, 'storeAdmin'])->name('clientes.store'); // Si agregaste este método
     // Si no tienes storeAdmin, usa la ruta que tenías antes o crea el método en el controlador
+    // Ruta para la baja lógica (DELETE)
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
+    Route::get('/mis-servicios/{id}', [App\Http\Controllers\ClienteController::class, 'show'])->name('cliente.servicios.show');
 
     // Gestión de Materiales (Admin)
     Route::get('/materiales', [MaterialController::class, 'index'])->name('materiales.index');
@@ -68,6 +71,7 @@ Route::middleware([
     // 7. ÁREA TÉCNICO (Panel de Trabajo)
     // ESTAS SON LAS RUTAS QUE FALTABAN O ESTABAN INCOMPLETAS
     Route::get('/tecnico', [TecnicoPanelController::class, 'index'])->name('tecnico.index');
+    Route::delete('/tecnicos/{id}', [TecnicoController::class, 'destroy'])->name('tecnicos.destroy');
     Route::get('/tecnico/{id}', [TecnicoPanelController::class, 'show'])->name('tecnico.show');
     Route::put('/tecnico/{id}', [TecnicoPanelController::class, 'update'])->name('tecnico.update'); // <--- ESTA ES LA RUTA CRÍTICA
     Route::post('/tecnico/{id}/pago', [TecnicoPanelController::class, 'storePago'])->name('tecnico.pago.store');

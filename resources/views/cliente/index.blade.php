@@ -1,115 +1,260 @@
 @extends('layouts.cliente')
 
 @section('content')
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Mis Servicios</h1>
-            <p class="text-gray-500 mt-1">Consulta el estado de tus reparaciones e instalaciones.</p>
+    <div class="bg-slate-900 rounded-2xl p-6 md:p-10 mb-10 shadow-2xl relative overflow-hidden text-white">
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 opacity-10 pointer-events-none">
+            <i class="fas fa-bolt text-9xl text-yellow-400"></i>
         </div>
-        <button onclick="document.getElementById('modalSolicitud').classList.remove('hidden')"
-            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition transform hover:-translate-y-1 flex items-center gap-2">
-            <i class="fas fa-plus-circle text-lg"></i> Solicitar Nuevo Servicio
-        </button>
+
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">
+                    Hola, <span class="text-yellow-400">{{ Auth::user()->name }}</span>
+                </h1>
+                <p class="text-slate-300 mt-2 text-sm md:text-base max-w-xl">
+                    Bienvenido a tu panel de gestión eléctrica. Aquí puedes monitorear el progreso de tus instalaciones y
+                    mantenimientos en tiempo real.
+                </p>
+
+                <div class="flex gap-6 mt-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-slate-700/50 rounded-lg">
+                            <i class="fas fa-clipboard-list text-blue-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold leading-none">{{ $servicios->count() }}</p>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-slate-700/50 rounded-lg">
+                            <i class="fas fa-hard-hat text-yellow-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-bold leading-none">
+                                {{ $servicios->whereIn('estado', ['EN_PROCESO', 'APROBADO'])->count() }}
+                            </p>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">En Curso</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="document.getElementById('modalSolicitud').classList.remove('hidden')"
+                class="group bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-3 px-6 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all transform hover:-translate-y-1 flex items-center gap-3">
+                <span class="bg-white/20 p-1.5 rounded-full">
+                    <i class="fas fa-plus text-sm"></i>
+                </span>
+                <span>Nueva Solicitud</span>
+            </button>
+        </div>
     </div>
 
     @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-8 rounded shadow-sm flex items-center">
-            <i class="fas fa-check-circle mr-2 text-xl"></i>
-            <p>{{ session('success') }}</p>
+        <div
+            class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-4 mb-8 rounded-r-lg shadow-sm flex items-center animate-fade-in-down">
+            <i class="fas fa-check-circle mr-3 text-xl"></i>
+            <div>
+                <p class="font-bold">¡Operación exitosa!</p>
+                <p class="text-sm">{{ session('success') }}</p>
+            </div>
         </div>
     @endif
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($servicios as $servicio)
+            @php
+                // Lógica de estilos centralizada y semántica
+                $config = match ($servicio->estado) {
+                    'PENDIENTE' => [
+                        'border' => 'border-l-gray-400',
+                        'text' => 'text-gray-600',
+                        'bg' => 'bg-gray-100',
+                        'icon' => 'fa-clock',
+                        'label' => 'En Revisión',
+                    ],
+                    'COTIZANDO' => [
+                        'border' => 'border-l-blue-400',
+                        'text' => 'text-blue-600',
+                        'bg' => 'bg-blue-50',
+                        'icon' => 'fa-file-invoice-dollar',
+                        'label' => 'Cotizando',
+                    ],
+                    'APROBADO' => [
+                        'border' => 'border-l-indigo-500',
+                        'text' => 'text-indigo-600',
+                        'bg' => 'bg-indigo-50',
+                        'icon' => 'fa-thumbs-up',
+                        'label' => 'Aprobado',
+                    ],
+                    'EN_PROCESO' => [
+                        'border' => 'border-l-yellow-500',
+                        'text' => 'text-yellow-700',
+                        'bg' => 'bg-yellow-50',
+                        'icon' => 'fa-tools',
+                        'label' => 'En Ejecución',
+                    ],
+                    'FINALIZADO' => [
+                        'border' => 'border-l-emerald-500',
+                        'text' => 'text-emerald-700',
+                        'bg' => 'bg-emerald-50',
+                        'icon' => 'fa-check-circle',
+                        'label' => 'Finalizado',
+                    ],
+                    default => [
+                        'border' => 'border-l-gray-300',
+                        'text' => 'text-gray-500',
+                        'bg' => 'bg-gray-50',
+                        'icon' => 'fa-circle',
+                        'label' => $servicio->estado,
+                    ],
+                };
+
+                // Cálculo simple de progreso visual
+                $progress = match ($servicio->estado) {
+                    'PENDIENTE' => '5%',
+                    'COTIZANDO' => '25%',
+                    'APROBADO' => '50%',
+                    'EN_PROCESO' => '75%',
+                    'FINALIZADO' => '100%',
+                    default => '0%',
+                };
+            @endphp
+
             <div
-                class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition duration-300">
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <span
-                            class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">#{{ str_pad($servicio->id_servicio, 4, '0', STR_PAD_LEFT) }}</span>
-                        @php
-                            $estilos = match ($servicio->estado) {
-                                'PENDIENTE' => ['bg-red-100', 'text-red-700', '10%'],
-                                'APROBADO' => ['bg-blue-100', 'text-blue-800', '50%'],
-                                'EN_PROCESO' => ['bg-indigo-100', 'text-indigo-800', '75%'],
-                                'FINALIZADO' => ['bg-green-100', 'text-green-800', '100%'],
-                                default => ['bg-gray-100', 'text-gray-600', '0%'],
-                            };
-                        @endphp
-                        <span
-                            class="{{ $estilos[0] }} {{ $estilos[1] }} px-3 py-1 rounded-full text-xs font-bold">{{ $servicio->estado }}</span>
+                class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-xl transition-all duration-300 flex flex-col h-full group relative overflow-hidden">
+
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 {{ $config['border'] }}"></div>
+
+                <div class="p-6 flex-1">
+                    <div class="flex justify-between items-start mb-4 pl-2">
+                        <div>
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ticket
+                                #{{ str_pad($servicio->id_servicio, 5, '0', STR_PAD_LEFT) }}</span>
+                            <div class="mt-1 flex items-center gap-1.5 {{ $config['text'] }}">
+                                <i class="fas {{ $config['icon'] }} text-xs"></i>
+                                <span class="text-xs font-bold uppercase">{{ $config['label'] }}</span>
+                            </div>
+                        </div>
+                        <div
+                            class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-slate-900 group-hover:text-yellow-400 transition-colors">
+                            <i class="fas fa-plug text-sm"></i>
+                        </div>
                     </div>
 
-                    <h3 class="text-lg font-bold text-gray-800 mb-2 h-14 overflow-hidden">
-                        {{ Str::limit($servicio->descripcion_solicitud, 50) }}</h3>
-                    <p class="text-xs text-gray-500 mb-4 flex items-center gap-1">
-                        <i class="far fa-calendar-alt"></i> {{ $servicio->created_at->format('d M Y, h:i A') }}
-                    </p>
+                    <h3 class="font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3rem]">
+                        {{ $servicio->descripcion_solicitud }}
+                    </h3>
 
-                    <!-- Barra de Progreso -->
-                    <div class="w-full bg-gray-100 rounded-full h-2 mb-2">
-                        <div class="bg-secondary h-2 rounded-full transition-all duration-1000"
-                            style="width: {{ $estilos[2] }}"></div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 mb-5">
+                        <i class="far fa-calendar-alt"></i>
+                        <span>Solicitado: {{ $servicio->created_at->format('d M Y') }}</span>
                     </div>
-                    <p class="text-xs text-right text-gray-400 font-medium">{{ $estilos[2] }} completado</p>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase">
+                            <span>Progreso</span>
+                            <span>{{ $progress }}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full transition-all duration-1000 {{ str_replace('text-', 'bg-', $config['text']) }}"
+                                style="width: {{ $progress }}"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Footer de la tarjeta con costos si aplica -->
-                @if ($servicio->monto_cotizado > 0)
-                    <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-between items-center">
-                        <span class="text-xs text-gray-500 font-bold uppercase">Cotización</span>
-                        <span class="text-sm font-bold text-gray-800">S/
-                            {{ number_format($servicio->monto_cotizado, 2) }}</span>
+                <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between items-center pl-6">
+                    <div>
+                        @if ($servicio->mano_obra > 0 || $servicio->monto_cotizado > 0)
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Total Estimado</p>
+                            <p class="text-sm font-black text-slate-800">
+                                S/ {{ number_format($servicio->mano_obra + $servicio->monto_cotizado, 2) }}
+                            </p>
+                        @else
+                            <p class="text-xs text-gray-400 italic flex items-center gap-1">
+                                <i class="fas fa-spinner fa-spin text-[10px]"></i> Calculando...
+                            </p>
+                        @endif
                     </div>
-                @endif
+
+                    <a href="{{ route('cliente.servicios.show', $servicio->id_servicio) }}"
+                        class="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-500 shadow-sm transition-all">
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
             </div>
+
         @empty
-            <div
-                class="col-span-1 md:col-span-3 text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4 text-gray-400">
-                    <i class="fas fa-inbox text-3xl"></i>
+            <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                <div
+                    class="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-2xl border-2 border-dashed border-gray-300 text-center">
+                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-bolt text-4xl text-gray-300"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Todo en orden por aquí</h3>
+                    <p class="text-gray-500 max-w-md mt-2 mb-8">
+                        No tienes servicios activos o pendientes. Si necesitas una instalación, reparación o mantenimiento,
+                        estamos listos.
+                    </p>
+                    <button onclick="document.getElementById('modalSolicitud').classList.remove('hidden')"
+                        class="text-blue-600 font-bold hover:text-blue-800 hover:underline flex items-center gap-2">
+                        <span>Iniciar una solicitud</span> <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900">Aún no tienes servicios</h3>
-                <p class="text-gray-500 mt-1 mb-6">¿Tienes algún problema eléctrico? Solicita un técnico ahora.</p>
-                <button onclick="document.getElementById('modalSolicitud').classList.remove('hidden')"
-                    class="text-blue-500 font-bold hover:underline">
-                    Crear primera solicitud
-                </button>
             </div>
         @endforelse
     </div>
 
-    <!-- MODAL SOLICITUD NUEVO SERVICIO -->
-    <div id="modalSolicitud"
-        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all scale-100">
-            <div class="bg-primary px-6 py-4 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-white">Nueva Solicitud de Servicio</h3>
-                <button onclick="document.getElementById('modalSolicitud').classList.add('hidden')"
-                    class="text-gray-300 hover:text-white transition">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+    <div id="modalSolicitud" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+
+                <div
+                    class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-slate-900 px-6 py-4 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-bolt text-yellow-400"></i> Nuevo Servicio
+                        </h3>
+                        <button onclick="document.getElementById('modalSolicitud').classList.add('hidden')"
+                            class="text-slate-400 hover:text-white transition">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+
+                    <form action="{{ route('cliente.servicios.store') }}" method="POST">
+                        @csrf
+                        <div class="p-6">
+                            <div class="mb-2">
+                                <label class="block text-slate-700 text-sm font-bold mb-2">¿En qué podemos ayudarte?</label>
+                                <textarea name="descripcion_solicitud" rows="5"
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition placeholder-slate-400 resize-none"
+                                    placeholder="Ej: Hola, necesito instalar 5 luminarias LED en mi oficina y revisar un tomacorriente que hace cortocircuito..."
+                                    required></textarea>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-xs text-slate-400"><i class="fas fa-info-circle mr-1"></i> Sé lo más
+                                    detallado posible.</p>
+                                <span class="text-xs text-slate-400">Mín. 5 caracteres</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3">
+                            <button type="submit"
+                                class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto transition">
+                                Enviar Solicitud
+                            </button>
+                            <button type="button"
+                                onclick="document.getElementById('modalSolicitud').classList.add('hidden')"
+                                class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <form action="{{ route('cliente.servicios.store') }}" method="POST" class="p-6">
-                @csrf
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Describe tu problema o necesidad</label>
-                    <textarea name="descripcion_solicitud" rows="4"
-                        class="w-full border-gray-300 rounded-lg p-3 text-sm focus:ring-secondary focus:border-secondary shadow-sm"
-                        placeholder="Ej: Necesito instalar 3 tomacorrientes en la sala y revisar una llave térmica que salta..." required></textarea>
-                    <p class="text-xs text-gray-400 mt-2 text-right">Mínimo 5 caracteres</p>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="document.getElementById('modalSolicitud').classList.add('hidden')"
-                        class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">Cancelar</button>
-                    <button type="submit"
-                        class="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold shadow-md transition flex items-center gap-2">
-                        <i class="fas fa-paper-plane"></i> Enviar Solicitud
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 @endsection

@@ -2,28 +2,30 @@
 
 @section('content')
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Cátalogo de Materiales</h2>
-            <p class="text-sm text-gray-500">Administra el catálogo de productos y precios referenciales.</p>
+            <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Catálogo de Materiales</h2>
+            <p class="text-slate-500 mt-1">Administra el inventario de productos y precios referenciales.</p>
         </div>
-        <!-- Botón para cancelar edición -->
         <button onclick="limpiarFormulario()" id="btnCancelar"
-            class="hidden bg-gray-200 text-gray-700 hover:bg-gray-300 font-bold py-2 px-4 rounded shadow-sm transition">
-            <i class="fas fa-times mr-2"></i> Cancelar Edición
+            class="hidden bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-2.5 px-5 rounded-xl shadow-sm transition flex items-center gap-2">
+            <i class="fas fa-times"></i> Cancelar Edición
         </button>
     </div>
 
     @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded shadow-sm">
-            <p><i class="fas fa-check-circle mr-2"></i>{{ session('success') }}</p>
+        <div
+            class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 mb-8 rounded-r-xl shadow-sm flex items-center gap-3 animate-fade-in-down">
+            <div class="bg-emerald-100 p-2 rounded-full"><i class="fas fa-check"></i></div>
+            <p class="font-medium">{{ session('success') }}</p>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm">
-            <p class="font-bold">Error:</p>
-            <ul class="list-disc ml-5 text-sm">
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-8 rounded-r-xl shadow-sm">
+            <p class="font-bold flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> Revisa los siguientes
+                errores:</p>
+            <ul class="list-disc ml-8 text-sm mt-2">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -33,112 +35,142 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <!-- COLUMNA 1: FORMULARIO (Registro / Edición) -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 sticky top-6">
-                <div class="bg-indigo-600 px-6 py-4 border-b border-indigo-700" id="headerForm">
-                    <h3 class="font-bold text-white flex items-center gap-2" id="tituloForm">
-                        <i class="fas fa-box-open"></i> Nuevo Material
+            <div
+                class="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden sticky top-6">
+
+                <div class="bg-slate-900 px-6 py-5 border-b border-slate-800 transition-colors duration-300"
+                    id="headerForm">
+                    <h3 class="font-bold text-white flex items-center gap-2 text-lg" id="tituloForm">
+                        <i class="fas fa-box-open text-yellow-400"></i> Nuevo Material
                     </h3>
                 </div>
 
-                <form action="{{ route('materiales.store') }}" method="POST" class="p-6" id="formMaterial">
+                <form action="{{ route('materiales.store') }}" method="POST" class="p-6 space-y-5" id="formMaterial">
                     @csrf
-                    <!-- Campo oculto para método PUT -->
                     <div id="methodField"></div>
 
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Nombre del Material</label>
-                        <input type="text" name="nombre" id="nombre" value="{{ old('nombre') }}"
-                            class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Ej: Cable #14 THW" required>
+                    <div>
+                        <label class="block text-slate-700 text-sm font-bold mb-2">Nombre del Material</label>
+                        <div class="relative">
+                            <input type="text" name="nombre" id="nombre" value="{{ old('nombre') }}"
+                                class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition placeholder-slate-400"
+                                placeholder="Ej: Cable #14 THW" required>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Unidad</label>
-                            <select name="unidad" id="unidad"
-                                class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm">
-                                <option value="unidad">Unidad</option>
-                                <option value="metro">Metro</option>
-                                <option value="caja">Caja</option>
-                                <option value="rollo">Rollo</option>
-                                <option value="paquete">Paquete</option>
-                                <option value="juego">Juego</option>
-                            </select>
+                            <label class="block text-slate-700 text-sm font-bold mb-2">Unidad</label>
+                            <div class="relative">
+                                <select name="unidad" id="unidad"
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition appearance-none">
+                                    <option value="unidad">Unidad</option>
+                                    <option value="metro">Metro</option>
+                                    <option value="caja">Caja</option>
+                                    <option value="rollo">Rollo</option>
+                                    <option value="paquete">Paquete</option>
+                                    <option value="juego">Juego</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Precio Ref. (S/)</label>
-                            <input type="number" step="0.01" min="0" name="precio_referencial"
-                                id="precio_referencial" value="{{ old('precio_referencial') }}"
-                                class="w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm font-bold text-right"
-                                placeholder="0.00" required>
+                            <label class="block text-slate-700 text-sm font-bold mb-2">Precio Ref. (S/)</label>
+                            <div class="relative">
+                                <span
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-sm">S/</span>
+                                <input type="number" step="0.01" min="0" name="precio_referencial"
+                                    id="precio_referencial" value="{{ old('precio_referencial') }}"
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-8 p-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition text-right"
+                                    placeholder="0.00" required>
+                            </div>
                         </div>
                     </div>
 
                     <button type="submit" id="btnSubmit"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg shadow transition">
-                        Guardar Material
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex justify-center items-center gap-2">
+                        <span>Guardar Material</span>
+                        <i class="fas fa-save"></i>
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- COLUMNA 2: LISTA (2/3) -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
-                <!-- Buscador rápido -->
-                <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <div
+                    class="p-5 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
                     <form action="{{ route('materiales.index') }}" method="GET" class="relative w-full max-w-md">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
+                            <i class="fas fa-search text-slate-400"></i>
                         </div>
                         <input type="text" name="search" value="{{ request('search') }}"
-                            class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 p-2.5"
+                            class="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent block w-full pl-10 p-2.5 outline-none transition shadow-sm"
                             placeholder="Buscar material...">
                     </form>
-                    <span class="text-sm text-gray-500">Items: <strong>{{ $materiales->total() }}</strong></span>
+                    <span
+                        class="text-xs font-bold text-slate-500 uppercase tracking-wide bg-white px-3 py-1 rounded border border-slate-200">
+                        Total Items: {{ $materiales->total() }}
+                    </span>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-500">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                    <table class="w-full text-sm text-left text-slate-500">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th class="px-6 py-4">Descripción</th>
-                                <th class="px-6 py-4 text-center">Unidad</th>
-                                <th class="px-6 py-4 text-right">Precio Ref.</th>
-                                <th class="px-6 py-4 text-center">Acciones</th>
+                                <th class="px-6 py-4 font-bold text-slate-600">Descripción del Material</th>
+                                <th class="px-6 py-4 font-bold text-slate-600 text-center">Unidad</th>
+                                <th class="px-6 py-4 font-bold text-slate-600 text-right">Precio Ref.</th>
+                                <th class="px-6 py-4 font-bold text-slate-600 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-slate-100">
                             @forelse($materiales as $mat)
-                                <tr class="hover:bg-gray-50 transition group">
-                                    <td class="px-6 py-4 font-medium text-gray-900">
-                                        {{ $mat->nombre }}
+                                <tr class="hover:bg-slate-50 transition group">
+                                    <td class="px-6 py-4 font-medium text-slate-800">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-yellow-100 group-hover:text-yellow-600 transition-colors">
+                                                <i class="fas fa-cube text-xs"></i>
+                                            </div>
+                                            {{ $mat->nombre }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <span
-                                            class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs border border-gray-200 uppercase">
+                                            class="bg-white text-slate-600 px-2.5 py-1 rounded text-xs font-bold border border-slate-200 uppercase tracking-wider">
                                             {{ $mat->unidad }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right font-bold text-gray-700">
-                                        S/ {{ number_format($mat->precio_referencial, 2) }}
+                                    <td class="px-6 py-4 text-right">
+                                        <span class="font-mono font-bold text-slate-700 bg-slate-50 px-2 py-1 rounded">
+                                            S/ {{ number_format($mat->precio_referencial, 2) }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
                                         <button onclick='editarMaterial(@json($mat))'
-                                            class="text-indigo-500 hover:text-indigo-700 p-2 rounded-full hover:bg-indigo-50 transition"
-                                            title="Editar">
-                                            <i class="fas fa-edit"></i>
+                                            class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-yellow-600 hover:border-yellow-400 flex items-center justify-center transition shadow-sm mx-auto"
+                                            title="Editar precio o nombre">
+                                            <i class="fas fa-pen text-xs"></i>
                                         </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                                        <i class="fas fa-box-open text-3xl mb-2 text-gray-300"></i>
-                                        <p>No hay materiales registrados.</p>
+                                    <td colspan="4" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center text-slate-400">
+                                            <div
+                                                class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                                                <i class="fas fa-box-open text-3xl opacity-50"></i>
+                                            </div>
+                                            <p class="font-medium">No se encontraron materiales.</p>
+                                            <p class="text-xs mt-1">Registra uno nuevo en el formulario.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforelse
@@ -146,7 +178,7 @@
                     </table>
                 </div>
 
-                <div class="p-4 border-t border-gray-100">
+                <div class="p-4 border-t border-slate-100 bg-slate-50">
                     {{ $materiales->links() }}
                 </div>
             </div>
@@ -154,55 +186,73 @@
 
     </div>
 
-    <!-- SCRIPT PARA EDITAR -->
     <script>
         function editarMaterial(material) {
-            // 1. Cambiar visualmente el formulario
-            document.getElementById('headerForm').classList.replace('bg-indigo-600', 'bg-yellow-500');
-            document.getElementById('headerForm').classList.replace('border-indigo-700', 'border-yellow-600');
-            document.getElementById('tituloForm').innerHTML = '<i class="fas fa-edit"></i> Editar Material';
-            document.getElementById('btnSubmit').innerText = 'Actualizar Precio';
-            document.getElementById('btnSubmit').classList.replace('bg-indigo-600', 'bg-yellow-600');
-            document.getElementById('btnSubmit').classList.replace('hover:bg-indigo-700', 'hover:bg-yellow-700');
+            // 1. Cambios Visuales (Modo Edición: Amarillo)
+            const header = document.getElementById('headerForm');
+            const btn = document.getElementById('btnSubmit');
+            const title = document.getElementById('tituloForm');
+
+            // Header: Slate -> Yellow
+            header.classList.remove('bg-slate-900', 'border-slate-800');
+            header.classList.add('bg-yellow-500', 'border-yellow-600');
+
+            // Título: Blanco -> Oscuro
+            title.classList.remove('text-white');
+            title.classList.add('text-slate-900');
+            title.innerHTML = '<i class="fas fa-edit"></i> Editar Material';
+
+            // Botón: Slate -> Yellow
+            btn.innerHTML = '<span>Actualizar Precio</span> <i class="fas fa-sync"></i>';
+            btn.classList.remove('bg-slate-900', 'hover:bg-slate-800', 'text-white');
+            btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
 
             document.getElementById('btnCancelar').classList.remove('hidden');
 
-            // 2. Rellenar campos
+            // 2. Rellenar Datos
             document.getElementById('nombre').value = material.nombre;
             document.getElementById('unidad').value = material.unidad;
             document.getElementById('precio_referencial').value = material.precio_referencial;
 
-            // 3. Cambiar acción del formulario
+            // 3. Configurar Acción UPDATE
             const form = document.getElementById('formMaterial');
-            form.action = `/materiales/${material.id_material}`;
+            form.action = `/materiales/${material.id_material}`; // Ajusta ruta base si es necesario (/admin/...)
 
-            // 4. Agregar método PUT
+            // 4. Inyectar PUT
             document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
 
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
+            // 5. Scroll
+            header.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
             });
         }
 
         function limpiarFormulario() {
-            // Resetear visualmente
-            document.getElementById('headerForm').classList.replace('bg-yellow-500', 'bg-indigo-600');
-            document.getElementById('headerForm').classList.replace('border-yellow-600', 'border-indigo-700');
-            document.getElementById('tituloForm').innerHTML = '<i class="fas fa-box-open"></i> Nuevo Material';
-            document.getElementById('btnSubmit').innerText = 'Guardar Material';
-            document.getElementById('btnSubmit').classList.replace('bg-yellow-600', 'bg-indigo-600');
-            document.getElementById('btnSubmit').classList.replace('hover:bg-yellow-700', 'hover:bg-indigo-700');
+            // 1. Restaurar Visuales (Modo Crear: Slate)
+            const header = document.getElementById('headerForm');
+            const btn = document.getElementById('btnSubmit');
+            const title = document.getElementById('tituloForm');
+
+            // Header: Yellow -> Slate
+            header.classList.add('bg-slate-900', 'border-slate-800');
+            header.classList.remove('bg-yellow-500', 'border-yellow-600');
+
+            // Título
+            title.classList.add('text-white');
+            title.classList.remove('text-slate-900');
+            title.innerHTML = '<i class="fas fa-box-open text-yellow-400"></i> Nuevo Material';
+
+            // Botón
+            btn.innerHTML = '<span>Guardar Material</span> <i class="fas fa-save"></i>';
+            btn.classList.add('bg-slate-900', 'hover:bg-slate-800', 'text-white');
+            btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
 
             document.getElementById('btnCancelar').classList.add('hidden');
 
-            // Limpiar inputs
+            // 2. Limpiar
             document.getElementById('formMaterial').reset();
-
-            // Restaurar acción STORE
             document.getElementById('formMaterial').action = "{{ route('materiales.store') }}";
-
-            // Quitar método PUT
             document.getElementById('methodField').innerHTML = '';
         }
     </script>

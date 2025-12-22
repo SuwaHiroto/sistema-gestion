@@ -44,23 +44,7 @@
         @yield('content')
     </main>
 
-    <!-- Barra de Navegación Inferior (Estilo App) -->
-    <nav
-        class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg flex justify-around py-3 z-50 md:hidden">
-        <a href="{{ route('tecnico.index') }}"
-            class="flex flex-col items-center text-primary {{ request()->routeIs('tecnico.index') ? 'text-secondary' : 'text-gray-400' }}">
-            <i class="fas fa-list-ul text-xl mb-1"></i>
-            <span class="text-[10px] font-bold">Trabajos</span>
-        </a>
-        <a href="#" class="flex flex-col items-center text-gray-400 hover:text-secondary">
-            <i class="fas fa-history text-xl mb-1"></i>
-            <span class="text-[10px] font-bold">Historial</span>
-        </a>
-        <a href="#" class="flex flex-col items-center text-gray-400 hover:text-secondary">
-            <i class="fas fa-user text-xl mb-1"></i>
-            <span class="text-[10px] font-bold">Perfil</span>
-        </a>
-    </nav>
+
 
 </body>
 

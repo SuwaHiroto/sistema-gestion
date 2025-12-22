@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Tecnico; // Plural
-use App\Models\User;     // Singular (tu modelo de usuario)
+use App\Models\Tecnico;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -11,16 +11,22 @@ use Illuminate\Support\Facades\DB;
 
 class TecnicoController extends Controller
 {
-    // GET: Listar técnicos (Para la vista de gestión)
-    public function index()
+    // GET: Listar técnicos (Filtrando activos por defecto)
+    public function index(Request $request)
     {
-        // Solo Admin puede ver la lista de técnicos
         if (Auth::user()->rol !== 'admin') {
             abort(403, 'Acceso denegado');
         }
 
-        // Traemos técnicos con su usuario
-        $tecnicos = Tecnico::with('usuario')->get();
+        // Filtramos: Por defecto solo activos, salvo que pidan ver todos
+        $tecnicos = Tecnico::with('usuario')
+            ->when($request->get('ver_inactivos'), function ($query) {
+                return $query; // Si piden inactivos, devolvemos todo
+            }, function ($query) {
+                return $query->where('estado', true); // Por defecto solo activos
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
         return view('admin.tecnicos.index', compact('tecnicos'));
     }
@@ -28,12 +34,10 @@ class TecnicoController extends Controller
     // POST: Registrar nuevo técnico
     public function store(Request $request)
     {
-        // 1. Verificar Rol Admin
         if (Auth::user()->rol !== 'admin') {
-            abort(403, 'Solo administradores pueden registrar técnicos');
+            abort(403);
         }
 
-        // 2. Validar Datos
         $request->validate([
             'email' => 'required|email|unique:usuarios,email',
             'password' => 'required|min:6',
@@ -41,28 +45,23 @@ class TecnicoController extends Controller
             'apellido_paterno' => 'required|string',
             'dni' => 'required|digits:8|unique:tecnicos,dni',
             'especialidad' => 'required|string',
-            'telefono' => 'nullable|string'
         ]);
 
         try {
-            // 3. Transacción para asegurar integridad
             DB::transaction(function () use ($request) {
-
-                // A. Crear Usuario (Login)
-                $nuevoUsuario = User::create([
+                $user = User::create([
                     'email' => $request->email,
                     'password' => Hash::make($request->password),
                     'rol' => 'tecnico',
                     'activo' => true,
-                    'name' => $request->nombres // Opcional, si tu tabla usuarios tiene 'name'
+                    'name' => $request->nombres
                 ]);
 
-                // B. Crear Técnico (Perfil) vinculado al ID del usuario
                 Tecnico::create([
-                    'id_usuario' => $nuevoUsuario->id_usuario,
+                    'id_usuario' => $user->id_usuario,
                     'nombres' => $request->nombres,
                     'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno,
+                    'apellido_materno' => $request->apellido_materno, // Puede ser null si no lo envían
                     'dni' => $request->dni,
                     'telefono' => $request->telefono,
                     'especialidad' => $request->especialidad,
@@ -72,57 +71,70 @@ class TecnicoController extends Controller
 
             return redirect()->route('tecnicos.index')->with('success', 'Técnico registrado correctamente');
         } catch (\Exception $e) {
-            return back()->withInput()->withErrors(['error' => 'No se pudo registrar: ' . $e->getMessage()]);
+            return back()->withInput()->withErrors(['error' => 'Error: ' . $e->getMessage()]);
         }
     }
 
-    // PUT: Actualizar técnico (Datos o Estado)
+    // PUT: Actualizar técnico
     public function update(Request $request, $id)
     {
-        if (Auth::user()->rol !== 'admin') {
-            abort(403, 'Acceso denegado');
-        }
-
         $tecnico = Tecnico::findOrFail($id);
         $usuario = User::findOrFail($tecnico->id_usuario);
 
-        // Validaciones (el email y dni son únicos pero ignorando al usuario actual)
         $request->validate([
             'email' => 'required|email|unique:usuarios,email,' . $usuario->id_usuario . ',id_usuario',
             'nombres' => 'required|string',
             'dni' => 'required|digits:8|unique:tecnicos,dni,' . $tecnico->id_tecnico . ',id_tecnico',
-            'estado' => 'required|boolean'
         ]);
 
-        try {
-            DB::transaction(function () use ($request, $tecnico, $usuario) {
-                // Actualizar Usuario (Login y Estado Activo)
-                $usuario->update([
-                    'email' => $request->email,
-                    'activo' => $request->estado, // Si desactivas al técnico, desactivas su login
-                    'name' => $request->nombres
-                ]);
+        DB::transaction(function () use ($request, $tecnico, $usuario) {
+            // Actualizar Login
+            $usuario->update([
+                'email' => $request->email,
+                'name' => $request->nombres,
+                // Si el técnico estaba inactivo y lo editan, NO lo activamos automáticamente aquí
+                // a menos que tú quieras. Por seguridad mantenemos el estado actual del técnico
+                // o el que venga en el request si añades un input de estado.
+            ]);
 
-                // Si enviaron password nueva, la actualizamos
-                if ($request->filled('password')) {
-                    $usuario->update(['password' => Hash::make($request->password)]);
-                }
+            if ($request->filled('password')) {
+                $usuario->update(['password' => Hash::make($request->password)]);
+            }
 
-                // Actualizar Perfil Técnico
-                $tecnico->update([
-                    'nombres' => $request->nombres,
-                    'apellido_paterno' => $request->apellido_paterno,
-                    'apellido_materno' => $request->apellido_materno,
-                    'dni' => $request->dni,
-                    'telefono' => $request->telefono,
-                    'especialidad' => $request->especialidad,
-                    'estado' => $request->estado
-                ]);
-            });
+            // Actualizar Perfil
+            $tecnico->update([
+                'nombres' => $request->nombres,
+                'apellido_paterno' => $request->apellido_paterno,
+                'apellido_materno' => $request->apellido_materno,
+                'dni' => $request->dni,
+                'telefono' => $request->telefono,
+                'especialidad' => $request->especialidad,
+            ]);
+        });
 
-            return redirect()->route('tecnicos.index')->with('success', 'Datos del técnico actualizados.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar: ' . $e->getMessage()]);
-        }
+        return redirect()->route('tecnicos.index')->with('success', 'Datos actualizados.');
+    }
+
+    /**
+     * BAJA LÓGICA: Desactiva el técnico y su acceso al sistema.
+     */
+    public function destroy($id)
+    {
+        $tecnico = Tecnico::findOrFail($id);
+        $usuario = User::find($tecnico->id_usuario);
+
+        DB::transaction(function () use ($tecnico, $usuario) {
+            // 1. Desactivar Perfil Técnico
+            $tecnico->estado = false;
+            $tecnico->save();
+
+            // 2. Bloquear Acceso (Login)
+            if ($usuario) {
+                $usuario->activo = false;
+                $usuario->save();
+            }
+        });
+
+        return redirect()->route('tecnicos.index')->with('success', 'Técnico dado de baja. Acceso revocado.');
     }
 }
