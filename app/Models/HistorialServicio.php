@@ -9,11 +9,10 @@ class HistorialServicio extends Model
 {
     use HasFactory;
 
-    protected $table = 'historial__servicios';
+    // CORREGIDO: Un solo guion bajo, tal como está en tu migración
+    protected $table = 'historial_servicios';
     protected $primaryKey = 'id_historial';
 
-    // IMPORTANTE: Desactivamos esto porque tu tabla no tiene updated_at
-    // y manejamos la fecha manualmente con 'fecha_cambio'
     public $timestamps = false;
 
     protected $fillable = [
@@ -26,7 +25,6 @@ class HistorialServicio extends Model
 
     protected $casts = [
         'fecha_cambio' => 'datetime',
-        'created_at' => 'datetime',
     ];
 
     public function servicio()

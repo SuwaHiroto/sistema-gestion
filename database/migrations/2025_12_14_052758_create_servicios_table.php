@@ -6,31 +6,30 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('servicios', function (Blueprint $table) {
             $table->id('id_servicio');
 
-            // Relaciones (El cliente es obligatorio, el técnico es opcional al inicio)
+            // Relaciones
             $table->foreignId('id_cliente')->constrained('clientes', 'id_cliente');
             $table->foreignId('id_tecnico')->nullable()->constrained('tecnicos', 'id_tecnico');
 
             $table->text('descripcion_solicitud');
 
-            // ESTADOS (El ciclo de vida)
-            $table->string('estado', 30)->default('COTIZANDO')
-                ->comment('COTIZANDO, APROBADO, EN_PROCESO, FINALIZADO, CANCELADO');
+            // ESTADOS: Cambiado default a 'PENDIENTE' para flujo directo
+            $table->string('estado', 30)->default('PENDIENTE')
+                ->comment('PENDIENTE, APROBADO, EN_PROCESO, FINALIZADO, CANCELADO');
 
             // FINANZAS
-            $table->decimal('monto_cotizado', 10, 2)->nullable(); // Presupuesto
-            $table->decimal('costo_final_real', 10, 2)->nullable(); // Lo que costó al cerrar
+            // mano_obra: Lo llena el Admin al crear O el Técnico al finalizar
+            $table->decimal('mano_obra', 10, 2)->nullable();
+            // costo_final_real: Se calcula automáticamente (Mano Obra + Materiales)
+            $table->decimal('costo_final_real', 10, 2)->nullable();
 
-            // FECHAS (Auditoría de tiempos)
+            // FECHAS
             $table->dateTime('fecha_solicitud')->useCurrent();
-            $table->dateTime('fecha_aprobacion')->nullable(); // ¡NUEVO! Cuando el cliente dice SÍ
+            $table->dateTime('fecha_aprobacion')->nullable();
             $table->dateTime('fecha_inicio')->nullable();
             $table->dateTime('fecha_fin')->nullable();
 
@@ -38,9 +37,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('servicios');

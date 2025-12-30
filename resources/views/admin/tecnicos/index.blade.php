@@ -63,7 +63,8 @@
                             <input type="password" name="password" id="password"
                                 class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition"
                                 placeholder="******">
-                            <p class="text-[10px] text-orange-600 mt-1 hidden font-medium" id="passwordHint">
+                            <p class="text-[10px] text-orange-600 mt-1 hidden font-medium flex items-center gap-1"
+                                id="passwordHint">
                                 <i class="fas fa-info-circle"></i> Dejar vacío para mantener la actual.
                             </p>
                         </div>
@@ -104,7 +105,9 @@
                             <div>
                                 <label class="block text-slate-700 text-xs font-bold mb-1">Teléfono</label>
                                 <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}"
-                                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none transition">
+                                    maxlength="9"
+                                    class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none transition"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);">
                             </div>
                         </div>
 
@@ -115,17 +118,10 @@
                                     class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-yellow-400 outline-none transition appearance-none"
                                     required>
                                     <option value="">Seleccionar...</option>
-                                    <option value="Electricidad General"
-                                        {{ old('especialidad') == 'Electricidad General' ? 'selected' : '' }}>Electricidad
-                                        General</option>
-                                    <option value="Instalaciones Industriales"
-                                        {{ old('especialidad') == 'Instalaciones Industriales' ? 'selected' : '' }}>
-                                        Instalaciones Industriales</option>
-                                    <option value="Mantenimiento"
-                                        {{ old('especialidad') == 'Mantenimiento' ? 'selected' : '' }}>Mantenimiento
-                                    </option>
-                                    <option value="Domótica" {{ old('especialidad') == 'Domótica' ? 'selected' : '' }}>
-                                        Domótica</option>
+                                    <option value="Electricidad General">Electricidad General</option>
+                                    <option value="Instalaciones Industriales">Instalaciones Industriales</option>
+                                    <option value="Mantenimiento">Mantenimiento</option>
+                                    <option value="Domótica">Domótica</option>
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
@@ -206,17 +202,20 @@
                                             </div>
                                         </div>
                                     </td>
+
                                     <td class="px-6 py-4">
                                         <div class="font-medium text-slate-700">DNI: {{ $tec->dni }}</div>
                                         <div class="text-xs text-slate-500"><i class="fas fa-phone mr-1"></i>
                                             {{ $tec->telefono }}</div>
                                     </td>
+
                                     <td class="px-6 py-4 text-center">
                                         <span
                                             class="bg-white text-slate-600 py-1 px-3 rounded-full text-xs font-bold border border-slate-200 shadow-sm">
                                             {{ $tec->especialidad }}
                                         </span>
                                     </td>
+
                                     <td class="px-6 py-4 text-center">
                                         @if ($tec->estado)
                                             <div
@@ -230,7 +229,7 @@
 
                                                 <form action="{{ route('tecnicos.destroy', $tec->id_tecnico) }}"
                                                     method="POST" class="inline-block"
-                                                    onsubmit="return confirm('¿Desactivar a {{ $tec->nombres }}?');">
+                                                    onsubmit="return confirm('¿Desactivar a {{ $tec->nombres }}? El usuario no podrá iniciar sesión.');">
                                                     @csrf @method('DELETE')
                                                     <button type="submit"
                                                         class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-400 flex items-center justify-center transition shadow-sm"
@@ -240,7 +239,8 @@
                                                 </form>
                                             </div>
                                         @else
-                                            <span class="text-xs font-bold text-red-400 uppercase">Inactivo</span>
+                                            <span
+                                                class="text-xs font-bold text-red-400 uppercase bg-red-50 px-2 py-1 rounded border border-red-100">Inactivo</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -276,7 +276,7 @@
             header.classList.remove('bg-slate-900', 'border-slate-800');
             header.classList.add('bg-yellow-500', 'border-yellow-600');
 
-            // Titulo: Blanco -> Oscuro
+            // Titulo
             title.classList.remove('text-white');
             title.classList.add('text-slate-900');
             title.innerHTML = '<i class="fas fa-edit"></i> Editar Técnico';
@@ -289,7 +289,7 @@
             // Mostrar ayudas
             document.getElementById('btnCancelar').classList.remove('hidden');
             document.getElementById('passwordHint').classList.remove('hidden');
-            document.getElementById('password').removeAttribute('required');
+            document.getElementById('password').removeAttribute('required'); // Pass opcional
 
             // 2. Llenar Campos
             document.getElementById('nombres').value = tecnico.nombres;
@@ -301,9 +301,11 @@
 
             if (usuario) document.getElementById('email').value = usuario.email;
 
-            // 3. Configurar Acción PUT
+            // 3. Configurar Acción PUT (Ruta Segura)
             const form = document.getElementById('formTecnico');
-            form.action = `/admin/tecnicos/${tecnico.id_tecnico}`; // Ajusta si la ruta base es diferente
+            const baseUrl = "{{ route('tecnicos.index') }}";
+            form.action = `${baseUrl}/${tecnico.id_tecnico}`;
+
             document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
 
             // 4. Scroll
@@ -332,7 +334,7 @@
 
             document.getElementById('btnCancelar').classList.add('hidden');
             document.getElementById('passwordHint').classList.add('hidden');
-            document.getElementById('password').setAttribute('required', 'required');
+            document.getElementById('password').setAttribute('required', 'required'); // Pass obligatorio
 
             // 2. Limpiar
             document.getElementById('formTecnico').reset();

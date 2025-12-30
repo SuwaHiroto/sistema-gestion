@@ -78,6 +78,7 @@
                                 </div>
                             </div>
                         </div>
+
                         <div>
                             <label class="block text-slate-700 text-sm font-bold mb-2">Precio Ref. (S/)</label>
                             <div class="relative">
@@ -188,21 +189,18 @@
 
     <script>
         function editarMaterial(material) {
-            // 1. Cambios Visuales (Modo Edición: Amarillo)
+            // 1. Cambios Visuales
             const header = document.getElementById('headerForm');
             const btn = document.getElementById('btnSubmit');
             const title = document.getElementById('tituloForm');
 
-            // Header: Slate -> Yellow
             header.classList.remove('bg-slate-900', 'border-slate-800');
             header.classList.add('bg-yellow-500', 'border-yellow-600');
 
-            // Título: Blanco -> Oscuro
             title.classList.remove('text-white');
             title.classList.add('text-slate-900');
             title.innerHTML = '<i class="fas fa-edit"></i> Editar Material';
 
-            // Botón: Slate -> Yellow
             btn.innerHTML = '<span>Actualizar Precio</span> <i class="fas fa-sync"></i>';
             btn.classList.remove('bg-slate-900', 'hover:bg-slate-800', 'text-white');
             btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
@@ -214,9 +212,11 @@
             document.getElementById('unidad').value = material.unidad;
             document.getElementById('precio_referencial').value = material.precio_referencial;
 
-            // 3. Configurar Acción UPDATE
+            // 3. Configurar Acción UPDATE (Segura para Hosting)
+            // Usamos la ruta base de Laravel en lugar de hardcodear /materiales/
             const form = document.getElementById('formMaterial');
-            form.action = `/materiales/${material.id_material}`; // Ajusta ruta base si es necesario (/admin/...)
+            const baseUrl = "{{ route('materiales.index') }}";
+            form.action = `${baseUrl}/${material.id_material}`;
 
             // 4. Inyectar PUT
             document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
@@ -229,21 +229,18 @@
         }
 
         function limpiarFormulario() {
-            // 1. Restaurar Visuales (Modo Crear: Slate)
+            // 1. Restaurar Visuales
             const header = document.getElementById('headerForm');
             const btn = document.getElementById('btnSubmit');
             const title = document.getElementById('tituloForm');
 
-            // Header: Yellow -> Slate
             header.classList.add('bg-slate-900', 'border-slate-800');
             header.classList.remove('bg-yellow-500', 'border-yellow-600');
 
-            // Título
             title.classList.add('text-white');
             title.classList.remove('text-slate-900');
             title.innerHTML = '<i class="fas fa-box-open text-yellow-400"></i> Nuevo Material';
 
-            // Botón
             btn.innerHTML = '<span>Guardar Material</span> <i class="fas fa-save"></i>';
             btn.classList.add('bg-slate-900', 'hover:bg-slate-800', 'text-white');
             btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
@@ -252,6 +249,7 @@
 
             // 2. Limpiar
             document.getElementById('formMaterial').reset();
+            // Restaurar ruta original STORE
             document.getElementById('formMaterial').action = "{{ route('materiales.store') }}";
             document.getElementById('methodField').innerHTML = '';
         }

@@ -4,34 +4,35 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Cliente;  // Modelo en Plural
-use App\Models\Servicio; // Modelo en Plural
-use App\Models\User;      // Necesario para el admin
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Cliente;
+use App\Models\Servicio;
+use App\Models\User;
 
 class ClienteController extends Controller
 {
     /**
-     * Dashboard del Cliente (Con redirección forzada).
-     * ESTE ES SOLO PARA EL ROL 'CLIENTE'
+     * Dashboard del Cliente.
      */
     public function index()
     {
         $user = Auth::user();
 
-        // Si por error entra un admin aquí, lo mandamos a su dashboard
+        // Evitar que el admin entre aquí por error
         if ($user->rol === 'admin') {
             return redirect()->route('dashboard');
         }
 
-        // 1. Buscamos el perfil del cliente asociado al usuario
+        // 1. Buscamos el perfil del cliente
         $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
 
-        // 2. Lógica de Redirección:
+        // 2. Si no tiene perfil completo, redirigir al formulario
         if (!$cliente || empty($cliente->nombres)) {
             return redirect()->route('cliente.complete.show');
         }
 
-        // 3. Si ya tiene perfil, mostramos su Dashboard con sus servicios
+        // 3. Mostramos sus servicios ordenados por fecha
         $servicios = Servicio::where('id_cliente', $cliente->id_cliente)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -40,29 +41,21 @@ class ClienteController extends Controller
     }
 
     /**
-     * Lista de Clientes para el ADMINISTRADOR
-     * ESTE ES EL QUE USA LA VISTA 'admin.clientes.index'
+     * Lista de Clientes (Solo para el ADMIN)
      */
-    // Asegúrate de importar Request arriba: use Illuminate\Http\Request;
-
     public function indexAdmin(Request $request)
     {
-        // 1. Seguridad: Solo admin entra
         if (Auth::user()->rol !== 'admin') {
             abort(403, 'Acceso denegado');
         }
 
-        // 2. Consulta con Filtro Inteligente
         $clientes = Cliente::with('usuario')
-            // AQUÍ ESTÁ LA CLAVE:
+            // Filtros de estado y búsqueda
             ->when($request->get('ver_inactivos'), function ($query) {
-                // Opción A: Si presionaste "Ver Historial", devuelve TODOS (activos e inactivos)
                 return $query;
             }, function ($query) {
-                // Opción B (Por defecto): Solo trae los que tienen estado = 1 (TRUE)
                 return $query->where('estado', true);
             })
-            // Filtro de búsqueda (si escribiste algo en el buscador)
             ->when($request->get('search'), function ($query, $search) {
                 return $query->where('nombres', 'like', "%{$search}%")
                     ->orWhere('dni', 'like', "%{$search}%");
@@ -73,15 +66,17 @@ class ClienteController extends Controller
         return view('admin.clientes.index', compact('clientes'));
     }
 
-
-
+    /**
+     * Ver Detalle de un Servicio (Vista del Cliente)
+     */
     public function show($id)
     {
         $user = Auth::user();
         $cliente = Cliente::where('id_usuario', $user->id_usuario)->firstOrFail();
 
+        // Cargamos todas las relaciones necesarias
         $servicio = Servicio::with([
-            'tecnico',           // <--- CAMBIO AQUÍ: Singular
+            'tecnico',
             'historial',
             'pagos',
             'materiales'
@@ -93,17 +88,13 @@ class ClienteController extends Controller
     }
 
     /**
-     * Muestra el formulario para completar datos.
+     * Vistas para completar perfil (Primer ingreso)
      */
-
     public function showCompleteProfile()
     {
         return view('auth.complete-profile');
     }
 
-    /**
-     * Guarda los datos del perfil y redirige al dashboard.
-     */
     public function storeCompleteProfile(Request $request)
     {
         $request->validate([
@@ -130,24 +121,28 @@ class ClienteController extends Controller
     }
 
     /**
-     * Guardar nueva solicitud de servicio (Cliente).
+     * Guardar nueva solicitud de servicio (Cliente)
      */
     public function store(Request $request)
     {
-        $request->validate(['descripcion_solicitud' => 'required|min:5']);
+$request->validate([
+            'descripcion' => 'required|min:5' 
+        ]);
 
-        $user = Auth::user();
-        $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
-
-        Servicio::create([
-            'id_cliente' => $cliente->id_cliente,
-            'descripcion_solicitud' => $request->descripcion_solicitud,
-            'estado' => 'PENDIENTE',
-            'fecha_solicitud' => now(),
+        // Crea el servicio y marca la fecha exacta de solicitud
+        $servicio = Servicio::create([
+            'id_cliente' => Auth::user()->cliente->id_cliente,
+            'descripcion_solicitud' => $request->descripcion,
+            'estado' => 'PENDIENTE',       // Pasa directo a PENDIENTE
+            'fecha_solicitud' => now(),    // <--- ESTO LLENA EL CAMPO
         ]);
 
         return back()->with('success', 'Tu solicitud ha sido enviada correctamente.');
     }
+
+    /**
+     * Crear Cliente desde Admin
+     */
     public function storeAdmin(Request $request)
     {
         $request->validate([
@@ -156,29 +151,32 @@ class ClienteController extends Controller
             'nombres' => 'required|string',
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request) {
             $user = User::create([
                 'email' => $request->email,
-                'password' => \Illuminate\Support\Facades\Hash::make($request->password),
+                'password' => Hash::make($request->password),
                 'rol' => 'cliente',
                 'activo' => true,
-                'name' => $request->nombres
             ]);
 
-            // El evento booted ya crea el cliente, pero lo actualizamos con los datos extra
-            $cliente = Cliente::where('id_usuario', $user->id_usuario)->first();
-            $cliente->update([
-                'telefono' => $request->telefono,
-                'direccion' => $request->direccion,
-                'estado' => $request->estado ?? true
-            ]);
+            // Forzamos la creación/actualización del perfil de cliente
+            $cliente = Cliente::firstOrNew(['id_usuario' => $user->id_usuario]);
+
+            $cliente->id_usuario = $user->id_usuario;
+            $cliente->nombres = $request->nombres;
+            $cliente->telefono = $request->telefono;
+            $cliente->direccion = $request->direccion;
+            $cliente->correo = $request->email;
+            $cliente->estado = $request->estado ?? true;
+
+            $cliente->save();
         });
 
         return redirect()->route('clientes.index')->with('success', 'Cliente registrado correctamente');
     }
 
     /**
-     * Update para Admin
+     * Actualizar Cliente desde Admin
      */
     public function updateAdmin(Request $request, $id)
     {
@@ -190,49 +188,52 @@ class ClienteController extends Controller
             'nombres' => 'required|string',
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $cliente, $usuario) {
-            $usuario->update([
+        DB::transaction(function () use ($request, $cliente, $usuario) {
+            // Actualizar Usuario (Login)
+            $userData = [
                 'email' => $request->email,
-                'name' => $request->nombres,
-                'activo' => $request->estado // Si desactivan cliente, desactivan login
-            ]);
+                'activo' => $request->estado
+            ];
 
             if ($request->filled('password')) {
-                $usuario->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+                $userData['password'] = Hash::make($request->password);
             }
 
+            $usuario->update($userData);
+
+            // Actualizar Perfil Cliente
             $cliente->update([
                 'nombres' => $request->nombres,
                 'telefono' => $request->telefono,
                 'direccion' => $request->direccion,
+                'correo' => $request->email,
                 'estado' => $request->estado
             ]);
         });
 
         return redirect()->route('clientes.index')->with('success', 'Datos del cliente actualizados.');
     }
+
     /**
-     * Baja lógica manual usando el campo 'estado'.
+     * Baja lógica (Soft Delete)
      */
     public function destroy($id)
     {
         $cliente = Cliente::findOrFail($id);
-
-        // Buscamos el usuario asociado
         $usuario = User::find($cliente->id_usuario);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($cliente, $usuario) {
-            // 1. Desactivamos al cliente en su tabla
+        DB::transaction(function () use ($cliente, $usuario) {
+            // 1. Desactivamos al cliente
             $cliente->estado = false;
             $cliente->save();
 
-            // 2. Desactivamos el acceso al sistema (Login)
+            // 2. Bloqueamos el login
             if ($usuario) {
                 $usuario->activo = false;
                 $usuario->save();
             }
         });
 
-        return redirect()->route('clientes.index')->with('success', 'Cliente dado de baja (Inactivo). Acceso revocado.');
+        return redirect()->route('clientes.index')->with('success', 'Cliente dado de baja. Acceso revocado.');
     }
 }

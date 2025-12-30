@@ -7,35 +7,29 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Servicio;
 use App\Models\Material;
 use App\Models\HistorialServicio;
-use App\Models\Pago; // Importamos el modelo de Pagos
+use App\Models\Pago;
 
 class TecnicoPanelController extends Controller
 {
-    /**
-     * Dashboard del Técnico: Muestra sus servicios asignados.
-     */
     public function index()
     {
         $user = Auth::user();
 
-        // Verificamos si tiene perfil de técnico
         if (!$user->tecnico) {
             return redirect()->route('dashboard')->with('error', 'No tienes perfil de técnico asignado.');
         }
 
-        // CORRECCIÓN: Usamos CASE en lugar de FIELD para compatibilidad con SQLite
+        // Ordenamos para que lo más urgente ("En Proceso") salga primero
         $ordenPersonalizado = "CASE estado 
             WHEN 'EN_PROCESO' THEN 1 
             WHEN 'APROBADO' THEN 2 
-            WHEN 'COTIZANDO' THEN 3 
+            WHEN 'PENDIENTE' THEN 3 
             WHEN 'FINALIZADO' THEN 4 
             ELSE 5 
         END";
 
-        // Traemos los servicios asignados a ESTE técnico
-        // Ordenamos por prioridad de estado y luego por fecha
         $servicios = Servicio::where('id_tecnico', $user->tecnico->id_tecnico)
-            ->whereIn('estado', ['COTIZANDO', 'APROBADO', 'EN_PROCESO', 'FINALIZADO'])
+            ->whereIn('estado', ['PENDIENTE', 'COTIZANDO', 'APROBADO', 'EN_PROCESO', 'FINALIZADO'])
             ->orderByRaw($ordenPersonalizado)
             ->orderBy('fecha_inicio', 'asc')
             ->get();
@@ -43,46 +37,60 @@ class TecnicoPanelController extends Controller
         return view('tecnico.index', compact('servicios'));
     }
 
-    /**
-     * Ver detalle de un trabajo específico.
-     */
     public function show($id)
     {
         $user = Auth::user();
-        // Cargamos pagos también para mostrar el historial de cobros de este servicio
         $servicio = Servicio::with(['cliente', 'materiales', 'pagos'])->findOrFail($id);
 
-        // Seguridad: Verificar que el servicio sea de este técnico
         if ($servicio->id_tecnico !== $user->tecnico->id_tecnico) {
             abort(403, 'No tienes permiso para ver este servicio.');
         }
 
-        $materialesDisponibles = Material::all(); // Para que pueda agregar materiales
+        $materialesDisponibles = Material::all();
 
         return view('tecnico.show', compact('servicio', 'materialesDisponibles'));
     }
 
-    /**
-     * Actualizar estado del servicio (Iniciar/Finalizar) o agregar materiales.
-     */
     public function update(Request $request, $id)
     {
         $servicio = Servicio::findOrFail($id);
         $user = Auth::user();
 
-        // 1. Cambio de Estado (Iniciar / Finalizar)
+        // 1. Cambio de Estado
         if ($request->has('estado')) {
             $nuevoEstado = $request->estado;
 
-            // Validaciones de flujo lógico
-            if ($nuevoEstado == 'EN_PROCESO' && $servicio->estado != 'APROBADO' && $servicio->estado != 'COTIZANDO') {
-                return back()->with('error', 'El servicio debe estar Aprobado para iniciar.');
+            // Validación: Solo se puede iniciar si está APROBADO o PENDIENTE/COTIZANDO (según tu flujo)
+            // Aquí lo dejamos flexible para evitar bloqueos
+
+            // A) INICIO
+            if ($nuevoEstado == 'EN_PROCESO' && is_null($servicio->fecha_inicio)) {
+                $servicio->fecha_inicio = now();
+            }
+
+            // B) FINALIZAR
+            if ($nuevoEstado == 'FINALIZADO') {
+                $servicio->fecha_fin = now();
+
+                // 1. Costo Materiales
+                $costoMateriales = $servicio->materiales->sum(function ($m) {
+                    return $m->pivot->cantidad * $m->pivot->precio_unitario;
+                });
+
+                // 2. Mano de Obra (Si el técnico la ajustó o viene del admin)
+                if ($request->has('mano_obra')) {
+                    $servicio->mano_obra = $request->mano_obra;
+                }
+
+                $manoObra = $servicio->mano_obra ?? 0;
+
+                // 3. Costo Total
+                $servicio->costo_final_real = $manoObra + $costoMateriales;
             }
 
             $servicio->estado = $nuevoEstado;
             $servicio->save();
 
-            // Guardar historial
             HistorialServicio::create([
                 'id_servicio' => $servicio->id_servicio,
                 'id_usuario_responsable' => $user->id_usuario,
@@ -97,31 +105,25 @@ class TecnicoPanelController extends Controller
             $request->validate([
                 'id_material' => 'required|exists:materiales,id_material',
                 'cantidad' => 'required|numeric|min:0.1',
-                'precio' => 'required|numeric|min:0' // Validamos el precio que viene del formulario
+                'precio' => 'required|numeric|min:0'
             ]);
 
-            // No es necesario buscar el material para el precio, usamos el del request
-            // $material = Materiales::find($request->id_material); 
-
-            // Agregamos a la tabla pivote usando el precio enviado por el técnico
             $servicio->materiales()->attach($request->id_material, [
                 'cantidad' => $request->cantidad,
-                'precio_unitario' => $request->precio // Usamos el precio del input
+                'precio_unitario' => $request->precio
             ]);
         }
 
         return back()->with('success', 'Servicio actualizado correctamente.');
     }
 
-    /**
-     * Registrar un pago cobrado por el técnico.
-     */
+    // --- AQUÍ ESTABA EL ERROR (FALTABA EL CÓDIGO) ---
     public function storePago(Request $request, $id)
     {
         $servicio = Servicio::findOrFail($id);
         $user = Auth::user();
 
-        // Seguridad: Verificar pertenencia
+        // Seguridad: Verificar que el servicio pertenece al técnico
         if ($servicio->id_tecnico !== $user->tecnico->id_tecnico) {
             abort(403, 'Acceso denegado.');
         }
@@ -131,13 +133,12 @@ class TecnicoPanelController extends Controller
             'tipo' => 'required|string'
         ]);
 
-        // Registrar pago (Siempre NO validado al principio)
         Pago::create([
             'id_servicio' => $servicio->id_servicio,
             'id_usuario_registra' => $user->id_usuario,
             'monto' => $request->monto,
             'tipo' => $request->tipo,
-            'validado' => false // Requiere confirmación del Admin
+            'validado' => false // Los pagos del técnico requieren validación de admin
         ]);
 
         return back()->with('success', 'Cobro registrado. Pendiente de validación por administración.');

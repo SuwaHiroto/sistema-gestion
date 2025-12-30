@@ -78,15 +78,30 @@
                 </button>
             </form>
         @elseif($servicio->estado == 'EN_PROCESO')
-            <form action="{{ route('tecnico.update', $servicio->id_servicio) }}" method="POST">
-                @csrf @method('PUT')
-                <input type="hidden" name="estado" value="FINALIZADO">
-                <button type="submit"
-                    class="w-full bg-slate-900 text-white font-black text-xl py-5 rounded-2xl shadow-lg shadow-slate-900/30 active:scale-95 active:bg-slate-800 transition flex items-center justify-center gap-3"
-                    onclick="return confirm('¿Confirmas que has terminado el trabajo y cobrado (si aplica)?')">
-                    <i class="fas fa-flag-checkered text-yellow-400"></i> FINALIZAR TRABAJO
-                </button>
-            </form>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <form action="{{ route('tecnico.update', $servicio->id_servicio) }}" method="POST">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="estado" value="FINALIZADO">
+
+                    <div class="mb-4">
+                        <label class="block text-slate-700 text-sm font-bold mb-2">Costo Mano de Obra (S/)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-slate-400 font-bold">S/</span>
+                            <input type="number" step="0.01" name="mano_obra"
+                                value="{{ $servicio->mano_obra > 0 ? $servicio->mano_obra : '' }}"
+                                class="w-full pl-8 h-12 text-lg font-bold border-slate-300 rounded-lg focus:ring-yellow-400 outline-none"
+                                placeholder="0.00" required>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">Confirma el valor de tu servicio antes de cerrar.</p>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-slate-900 text-white font-black text-xl py-4 rounded-xl shadow-lg shadow-slate-900/30 active:scale-95 active:bg-slate-800 transition flex items-center justify-center gap-3"
+                        onclick="return confirm('¿Confirmas que has terminado el trabajo? Esto cerrará el ticket.')">
+                        <i class="fas fa-flag-checkered text-yellow-400"></i> FINALIZAR TRABAJO
+                    </button>
+                </form>
+            </div>
         @endif
     </div>
 
@@ -132,22 +147,23 @@
 
                         <div class="space-y-3">
                             <select name="id_material" id="selectMaterial"
-                                class="w-full text-sm border-slate-300 rounded-lg h-12" required
+                                class="w-full text-sm border-slate-300 rounded-lg h-12 outline-none" required
                                 onchange="actualizarPrecio()">
                                 <option value="" data-precio="0">Seleccionar Material...</option>
                                 @foreach ($materialesDisponibles as $m)
                                     <option value="{{ $m->id_material }}" data-precio="{{ $m->precio_referencial }}">
-                                        {{ $m->nombre }}</option>
+                                        {{ $m->nombre }}
+                                    </option>
                                 @endforeach
                             </select>
 
                             <div class="flex gap-2">
                                 <input type="number" name="cantidad" placeholder="Cant."
-                                    class="w-1/2 text-sm border-slate-300 rounded-lg h-12 text-center font-bold"
-                                    min="1" required>
+                                    class="w-1/3 text-sm border-slate-300 rounded-lg h-12 text-center font-bold outline-none"
+                                    min="0.1" step="0.1" required>
                                 <input type="number" name="precio" id="inputPrecio" placeholder="Precio S/"
-                                    class="w-1/2 text-sm border-slate-300 rounded-lg h-12 text-center" step="0.1"
-                                    required>
+                                    class="w-2/3 text-sm border-slate-300 rounded-lg h-12 text-center outline-none"
+                                    step="0.01" required>
                             </div>
 
                             <button
@@ -170,19 +186,28 @@
 
         <div class="p-5">
             @php
+                // 1. Calcular Deuda Total (Mano de Obra + Materiales)
+                if ($servicio->estado == 'FINALIZADO' && $servicio->costo_final_real > 0) {
+                    $costoTotal = $servicio->costo_final_real;
+                } else {
+                    $costoMateriales = $servicio->materiales->sum(function ($m) {
+                        return $m->pivot->cantidad * $m->pivot->precio_unitario;
+                    });
+                    $costoTotal = ($servicio->mano_obra ?? 0) + $costoMateriales;
+                }
+
                 $pagado = $servicio->pagos->sum('monto');
-                $costoTotal = $servicio->costo_final_real > 0 ? $servicio->costo_final_real : $servicio->monto_cotizado;
                 $saldoPendiente = max(0, $costoTotal - $pagado);
             @endphp
 
             <div class="flex gap-3 mb-6">
                 <div class="flex-1 bg-green-50 rounded-xl p-3 border border-green-100 text-center">
                     <p class="text-[10px] uppercase font-bold text-green-600">Pagado</p>
-                    <p class="text-xl font-black text-green-700">S/ {{ number_format($pagado, 0) }}</p>
+                    <p class="text-xl font-black text-green-700">S/ {{ number_format($pagado, 2) }}</p>
                 </div>
                 <div class="flex-1 bg-red-50 rounded-xl p-3 border border-red-100 text-center">
                     <p class="text-[10px] uppercase font-bold text-red-600">Por Cobrar</p>
-                    <p class="text-xl font-black text-red-700">S/ {{ number_format($saldoPendiente, 0) }}</p>
+                    <p class="text-xl font-black text-red-700">S/ {{ number_format($saldoPendiente, 2) }}</p>
                 </div>
             </div>
 
@@ -205,7 +230,7 @@
                 </div>
             @endif
 
-            @if ($servicio->estado != 'FINALIZADO' && $saldoPendiente > 0)
+            @if ($saldoPendiente > 0)
                 <form action="{{ route('tecnico.pago.store', $servicio->id_servicio) }}" method="POST"
                     onsubmit="return validarPago()">
                     @csrf
@@ -215,10 +240,11 @@
                         <div class="relative w-2/3">
                             <span class="absolute left-3 top-3 text-slate-400 font-bold">S/</span>
                             <input type="number" step="0.01" name="monto" id="inputMontoPago"
-                                class="w-full pl-8 h-12 text-lg font-bold border-slate-300 rounded-lg focus:ring-green-500"
+                                class="w-full pl-8 h-12 text-lg font-bold border-slate-300 rounded-lg focus:ring-green-500 outline-none"
                                 placeholder="0.00" required>
                         </div>
-                        <select name="tipo" class="w-1/3 h-12 text-sm border-slate-300 rounded-lg bg-white">
+                        <select name="tipo"
+                            class="w-1/3 h-12 text-sm border-slate-300 rounded-lg bg-white outline-none">
                             <option value="Efectivo">Efectivo</option>
                             <option value="Yape/Plin">Yape</option>
                             <option value="Transferencia">Banco</option>
@@ -232,7 +258,7 @@
                         COBRAR AHORA
                     </button>
                 </form>
-            @elseif($saldoPendiente <= 0)
+            @elseif($saldoPendiente <= 0 && $costoTotal > 0)
                 <div class="text-center p-3 bg-green-100 text-green-800 rounded-xl font-bold border border-green-200">
                     <i class="fas fa-star mr-1"></i> ¡Cuenta Saldada!
                 </div>
@@ -248,12 +274,13 @@
         }
 
         function validarPago() {
-            // Pasamos el valor PHP a JS de forma segura como número
+            // Pasamos el valor PHP a JS de forma segura
             const saldo = {{ number_format($saldoPendiente, 2, '.', '') }};
             const input = document.getElementById('inputMontoPago');
             const monto = parseFloat(input.value);
             const error = document.getElementById('errorMonto');
 
+            // Opcional: Permitir pagar de más? Generalmente no.
             if (monto > saldo) {
                 error.classList.remove('hidden');
                 input.classList.add('border-red-500', 'text-red-600');

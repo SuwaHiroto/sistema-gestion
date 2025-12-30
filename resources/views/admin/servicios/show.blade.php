@@ -3,7 +3,7 @@
 @section('content')
 
     <div class="mb-6">
-        <a href="{{ url('/servicios') }}"
+        <a href="{{ route('servicios.index') }}"
             class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition group">
             <div
                 class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:border-slate-400 transition">
@@ -37,7 +37,6 @@
             @php
                 $statusStyles = match ($servicio->estado) {
                     'PENDIENTE' => 'bg-slate-700 text-slate-200 border-slate-600',
-                    'COTIZANDO' => 'bg-blue-600 text-white border-blue-500',
                     'APROBADO' => 'bg-indigo-600 text-white border-indigo-500',
                     'EN_PROCESO' => 'bg-yellow-500 text-slate-900 border-yellow-400',
                     'FINALIZADO' => 'bg-emerald-600 text-white border-emerald-500',
@@ -60,11 +59,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         <div class="lg:col-span-2 space-y-8">
-
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                     <h3 class="font-bold text-slate-700">Información del Cliente</h3>
-                    <a href="{{ url('/servicios/' . $servicio->id_servicio . '/edit') }}"
+                    <a href="{{ route('servicios.edit', $servicio->id_servicio) }}"
                         class="text-xs font-bold text-blue-600 hover:underline">
                         <i class="fas fa-pen mr-1"></i> Editar Datos
                     </a>
@@ -110,7 +108,6 @@
                                     <span
                                         class="w-1.5 h-1.5 rounded-full {{ $index === 0 ? 'bg-yellow-400' : 'bg-slate-300' }}"></span>
                                 </span>
-
                                 <div class="ml-4">
                                     <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-1">
                                         <h4 class="text-sm font-bold text-slate-800">
@@ -127,9 +124,6 @@
                                             {{ $h->comentario }}
                                         </div>
                                     @endif
-                                    <p class="text-[10px] text-slate-400 mt-1">
-                                        Autor: <span class="font-medium">{{ $h->responsable->email ?? 'Sistema' }}</span>
-                                    </p>
                                 </div>
                             </div>
                         @empty
@@ -141,12 +135,10 @@
         </div>
 
         <div class="space-y-6">
-
             <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                 <div class="h-1.5 w-full bg-slate-900"></div>
                 <div class="p-6">
                     <h3 class="text-xs uppercase font-bold text-slate-400 mb-4 tracking-wider">Personal Técnico</h3>
-
                     @if ($servicio->tecnico)
                         <div class="flex items-center gap-4 mb-4">
                             <div
@@ -167,7 +159,6 @@
                                 <i class="fas fa-user-slash"></i>
                             </div>
                             <p class="text-sm font-bold text-orange-800">Sin Técnico Asignado</p>
-                            <p class="text-xs text-orange-600 mt-1">Este servicio no puede iniciarse aún.</p>
                         </div>
                     @endif
 
@@ -204,12 +195,20 @@
                 </div>
                 <div class="p-6">
                     @php
+                        // 1. Costo Materiales
                         $costoMateriales = $servicio->materiales->sum(
                             fn($m) => $m->pivot->precio_unitario * $m->pivot->cantidad,
                         );
-                        $total =
-                            $servicio->costo_final_real > 0 ? $servicio->costo_final_real : $servicio->monto_cotizado;
-                        $manoObra = max(0, $total - $costoMateriales);
+
+                        // 2. Mano de Obra
+                        $manoObra = $servicio->mano_obra ?? 0;
+
+                        // 3. Total Real o Estimado
+                        if ($servicio->estado === 'FINALIZADO' && $servicio->costo_final_real > 0) {
+                            $total = $servicio->costo_final_real;
+                        } else {
+                            $total = $costoMateriales + $manoObra;
+                        }
                     @endphp
 
                     <div class="space-y-3 text-sm">
@@ -228,38 +227,13 @@
                     </div>
 
                     @if ($servicio->estado != 'FINALIZADO')
-                        <a href="{{ url('/servicios/' . $servicio->id_servicio . '/edit') }}"
+                        <a href="{{ route('servicios.edit', $servicio->id_servicio) }}"
                             class="mt-4 w-full block text-center bg-white border-2 border-slate-100 hover:border-yellow-400 text-slate-600 hover:text-slate-900 font-bold py-2 rounded-lg transition text-xs uppercase tracking-wide">
                             Ajustar Costos
                         </a>
                     @endif
                 </div>
             </div>
-
-            @if ($servicio->id_tecnico && $servicio->estado != 'FINALIZADO')
-                <div class="bg-slate-900 rounded-2xl p-6 text-white text-center">
-                    <p class="text-xs text-slate-400 font-bold uppercase mb-4">Acciones Rápidas</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <form action="{{ route('servicios.update', $servicio->id_servicio) }}" method="POST">
-                            @csrf @method('PUT')
-                            <input type="hidden" name="estado" value="EN_PROCESO">
-                            <button
-                                class="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold transition">
-                                En Proceso
-                            </button>
-                        </form>
-                        <form action="{{ route('servicios.update', $servicio->id_servicio) }}" method="POST">
-                            @csrf @method('PUT')
-                            <input type="hidden" name="estado" value="FINALIZADO">
-                            <button
-                                class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold transition">
-                                Finalizar
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            @endif
-
         </div>
     </div>
 @endsection

@@ -6,16 +6,13 @@ use App\Models\Servicio;
 use App\Models\Tecnico;
 use App\Models\Material;
 use App\Models\Cliente;
-use App\Models\HistorialServicio; // Asegúrate de importar el modelo de historial correcto
+use App\Models\HistorialServicio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ServicioController extends Controller
 {
-    /**
-     * Listado de servicios
-     */
     public function index()
     {
         $user = Auth::user();
@@ -33,42 +30,42 @@ class ServicioController extends Controller
         return view('admin.servicios.index', compact('servicios'));
     }
 
-    /**
-     * Formulario de creación
-     */
     public function create()
     {
         $clientes = Cliente::all();
+        // Solo técnicos activos
         $tecnicos = Tecnico::where('estado', true)->get();
         $materiales = Material::all();
         return view('admin.servicios.create', compact('clientes', 'tecnicos', 'materiales'));
     }
 
-    /**
-     * Guardar nuevo servicio
-     */
     public function store(Request $request)
     {
         $request->validate([
             'descripcion_solicitud' => 'required|min:5',
-            'monto_cotizado' => 'numeric|nullable',
+            'mano_obra' => 'numeric|nullable|min:0', // CORREGIDO: Usamos mano_obra
         ]);
 
         $user = Auth::user();
+        // Si lo crea un admin, usa el cliente del form. Si es cliente, usa su propio ID.
         $idCliente = $user->rol === 'cliente' ? $user->cliente->id_cliente : $request->id_cliente;
 
         DB::transaction(function () use ($request, $user, $idCliente) {
+
+            // LÓGICA DE ESTADO: Si tiene técnico, nace APROBADO para que pueda trabajar
+            $estadoInicial = ($request->id_tecnico) ? 'APROBADO' : 'PENDIENTE';
+
             $servicio = Servicio::create([
                 'id_cliente' => $idCliente,
                 'id_tecnico' => $request->id_tecnico,
                 'descripcion_solicitud' => $request->descripcion_solicitud,
-                'estado' => ($request->id_tecnico) ? 'PENDIENTE' : 'PENDIENTE',
+                'estado' => $estadoInicial,
                 'fecha_solicitud' => now(),
                 'fecha_inicio' => $request->fecha_inicio,
-                'monto_cotizado' => $request->monto_cotizado ?? 0,
+                'mano_obra' => $request->mano_obra ?? 0, // CORREGIDO
             ]);
 
-            // Guardar Materiales
+            // Guardar Materiales iniciales (si el admin agrega alguno)
             if ($request->has('materiales')) {
                 $syncData = [];
                 foreach ($request->materiales as $mat) {
@@ -82,12 +79,12 @@ class ServicioController extends Controller
                 $servicio->materiales()->sync($syncData);
             }
 
-            // Historial
+            // Historial inicial
             HistorialServicio::create([
                 'id_servicio' => $servicio->id_servicio,
                 'id_usuario_responsable' => $user->id_usuario,
                 'estado_nuevo' => $servicio->estado,
-                'comentario' => 'Creación inicial',
+                'comentario' => 'Servicio registrado en sistema',
                 'fecha_cambio' => now()
             ]);
         });
@@ -95,9 +92,6 @@ class ServicioController extends Controller
         return redirect()->route('servicios.index')->with('success', 'Servicio creado exitosamente');
     }
 
-    /**
-     * Ver detalle
-     */
     public function show($id)
     {
         $servicio = Servicio::with(['cliente', 'tecnico', 'pagos', 'historial.responsable', 'materiales'])->findOrFail($id);
@@ -105,9 +99,6 @@ class ServicioController extends Controller
         return view('admin.servicios.show', compact('servicio', 'tecnicos'));
     }
 
-    /**
-     * Formulario de edición
-     */
     public function edit($id)
     {
         $servicio = Servicio::with(['cliente', 'materiales'])->findOrFail($id);
@@ -117,26 +108,23 @@ class ServicioController extends Controller
         return view('admin.servicios.edit', compact('servicio', 'tecnicos', 'materiales'));
     }
 
-    /**
-     * Actualizar servicio (Lógica corregida)
-     */
     public function update(Request $request, $id)
     {
         $servicio = Servicio::findOrFail($id);
+        $user = Auth::user();
 
-        // --- PRIORIDAD 1: EDICIÓN GENERAL (Desde edit.blade.php) ---
+        // --- MODO 1: EDICIÓN COMPLETA (Desde edit.blade.php) ---
         if ($request->has('modo_edicion') && $request->modo_edicion == 'general') {
 
-            // 1. Actualizar datos básicos
             $servicio->update([
                 'descripcion_solicitud' => $request->descripcion_solicitud,
-                'monto_cotizado' => $request->monto_cotizado,
+                'mano_obra' => $request->mano_obra, // CORREGIDO
                 'costo_final_real' => $request->costo_final_real,
                 'id_tecnico' => $request->id_tecnico,
                 'estado' => $request->estado,
             ]);
 
-            // 2. Sincronizar Materiales
+            // Sincronizar materiales
             if ($request->has('materiales')) {
                 $syncData = [];
                 foreach ($request->materiales as $mat) {
@@ -149,31 +137,29 @@ class ServicioController extends Controller
                 }
                 $servicio->materiales()->sync($syncData);
             } else {
-                // Si borraron todos los materiales, limpiar la tabla pivote
                 $servicio->materiales()->detach();
             }
 
-            // 3. Registrar Historial
-            $this->logHistorial($servicio, 'Edición completa de servicio');
-
-            return redirect()->route('servicios.show', $servicio->id_servicio)->with('success', 'Datos actualizados correctamente');
+            $this->logHistorial($servicio, 'Edición administrativa completa');
+            return redirect()->route('servicios.show', $servicio->id_servicio)->with('success', 'Datos actualizados');
         }
 
-        // --- PRIORIDAD 2: ASIGNACIÓN RÁPIDA (Desde show.blade.php) ---
+        // --- MODO 2: ASIGNACIÓN RÁPIDA DE TÉCNICO (Desde show.blade.php) ---
         if ($request->has('id_tecnico') && !$request->has('modo_edicion')) {
             $servicio->id_tecnico = $request->id_tecnico;
-            $servicio->estado = 'PENDIENTE';
+            // Al asignar, lo aprobamos para que el técnico pueda iniciar
+            $servicio->estado = 'APROBADO';
             $servicio->save();
-            $this->logHistorial($servicio, 'Técnico Asignado');
+            $this->logHistorial($servicio, 'Técnico Asignado y Servicio Aprobado');
 
-            return back()->with('success', 'Técnico asignado');
+            return back()->with('success', 'Técnico asignado correctamente');
         }
 
-        // --- PRIORIDAD 3: CAMBIO DE ESTADO RÁPIDO (Desde show.blade.php) ---
+        // --- MODO 3: CAMBIO DE ESTADO RÁPIDO ---
         if ($request->has('estado') && !$request->has('modo_edicion')) {
             $servicio->estado = $request->estado;
             $servicio->save();
-            $this->logHistorial($servicio, "Cambio a {$request->estado}");
+            $this->logHistorial($servicio, "Cambio manual a {$request->estado}");
 
             return back()->with('success', 'Estado actualizado');
         }
@@ -181,7 +167,6 @@ class ServicioController extends Controller
         return back();
     }
 
-    // Helper para no repetir código de historial
     private function logHistorial($servicio, $comentario)
     {
         HistorialServicio::create([

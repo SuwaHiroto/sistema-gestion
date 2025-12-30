@@ -4,9 +4,9 @@
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Nueva Solicitud</h2>
-            <p class="text-slate-500 mt-1">Registra un nuevo servicio y genera su cotización inicial.</p>
+            <p class="text-slate-500 mt-1">Registra un nuevo servicio y genera su presupuesto inicial.</p>
         </div>
-        <a href="{{ url('/servicios') }}"
+        <a href="{{ route('servicios.index') }}"
             class="group flex items-center gap-2 text-slate-500 hover:text-slate-800 transition font-medium">
             <div
                 class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:border-slate-400 transition">
@@ -39,7 +39,6 @@
                     </h4>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
                         <div class="col-span-1">
                             <label class="block text-slate-700 text-sm font-bold mb-2">Cliente <span
                                     class="text-red-500">*</span></label>
@@ -58,7 +57,8 @@
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                    <i class="fas fa-chevron-down text-xs"></i></div>
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -79,7 +79,8 @@
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                    <i class="fas fa-chevron-down text-xs"></i></div>
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -113,7 +114,8 @@
                             class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-lg transition flex items-center gap-2 border border-slate-200">
                             <div
                                 class="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-slate-900 text-[10px]">
-                                <i class="fas fa-plus"></i></div>
+                                <i class="fas fa-plus"></i>
+                            </div>
                             Agregar Item
                         </button>
                     </div>
@@ -133,7 +135,7 @@
                                 <tr id="fila-vacia">
                                     <td colspan="5" class="px-4 py-8 text-center text-slate-400 italic bg-white">
                                         <i class="fas fa-box-open text-2xl mb-2 opacity-50 block"></i>
-                                        No se han agregado materiales a la cotización.
+                                        No se han agregado materiales.
                                     </td>
                                 </tr>
                             </tbody>
@@ -143,7 +145,6 @@
                     <div class="flex justify-end">
                         <div
                             class="w-full md:w-1/3 bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4 shadow-sm">
-
                             <div class="flex justify-between items-center text-slate-500 text-sm">
                                 <span>Costo Materiales:</span>
                                 <span class="font-medium" id="resumenMateriales">S/ 0.00</span>
@@ -151,7 +152,7 @@
 
                             <div class="flex justify-between items-center">
                                 <label class="text-slate-700 font-bold text-sm">Mano de Obra (S/):</label>
-                                <input type="number" step="0.01" min="0" name="mano_de_obra" id="manoDeObra"
+                                <input type="number" step="0.01" min="0" name="mano_obra" id="manoDeObra"
                                     class="w-32 bg-white border border-slate-300 rounded-lg p-2 text-right text-sm font-bold text-slate-700 focus:ring-2 focus:ring-yellow-400 outline-none transition"
                                     value="0.00" oninput="calcularTotalGeneral()">
                             </div>
@@ -163,7 +164,6 @@
                                         0.00</span>
                                     <span class="text-[10px] text-slate-400 uppercase font-bold">Impuestos incluidos</span>
                                 </div>
-                                <input type="hidden" name="monto_cotizado" id="inputTotalGeneral" value="0">
                             </div>
                         </div>
                     </div>
@@ -176,7 +176,6 @@
                         <i class="fas fa-check-circle text-yellow-400"></i>
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
@@ -200,7 +199,6 @@
 
             const row = document.createElement('tr');
             row.id = `fila-${contadorFilas}`;
-            // Estilos Tailwind aplicados a los inputs dinámicos
             const inputClass =
                 "w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition";
 
@@ -269,7 +267,6 @@
 
             document.getElementById('resumenMateriales').innerText = 'S/ ' + totalMateriales.toFixed(2);
             document.getElementById('totalGeneralDisplay').innerText = 'S/ ' + total.toFixed(2);
-            document.getElementById('inputTotalGeneral').value = total.toFixed(2);
         }
     </script>
 @endsection

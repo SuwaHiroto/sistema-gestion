@@ -107,10 +107,16 @@
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <i class="fas fa-lock text-slate-400"></i>
                             </div>
+
                             <input id="password" type="password" name="password" required
                                 autocomplete="current-password"
-                                class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition placeholder-slate-400"
+                                class="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition placeholder-slate-400"
                                 placeholder="••••••••">
+
+                            <button type="button" onclick="toggleVisibility('password', 'icon-login')"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer transition-colors">
+                                <i id="icon-login" class="far fa-eye text-lg"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -153,6 +159,23 @@
     <div class="md:hidden fixed bottom-4 text-xs text-slate-400 text-center w-full">
         &copy; {{ date('Y') }} ElectriGonza
     </div>
+
+    <script>
+        function toggleVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash'); // Cambia a ojo tachado
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye'); // Vuelve a ojo normal
+            }
+        }
+    </script>
 
 </body>
 

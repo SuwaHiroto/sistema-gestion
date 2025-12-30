@@ -15,8 +15,9 @@
             </div>
             <div>
                 <p class="text-emerald-100 text-xs font-bold uppercase tracking-wider">Total Recaudado (Validado)</p>
-                <p class="text-2xl font-bold leading-none">S/
-                    {{ number_format($pagos->where('validado', true)->sum('monto'), 2) }}</p>
+                <p class="text-2xl font-bold leading-none">
+                    S/ {{ number_format($totalRecaudado ?? 0, 2) }}
+                </p>
             </div>
         </div>
     </div>
@@ -31,8 +32,7 @@
 
     @if ($errors->any())
         <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-8 rounded-r-xl shadow-sm">
-            <p class="font-bold flex items-center gap-2"><i class="fas fa-exclamation-circle"></i> Error en la transacción:
-            </p>
+            <p class="font-bold flex items-center gap-2"><i class="fas fa-exclamation-circle"></i> Atención:</p>
             <ul class="list-disc ml-8 text-sm mt-2">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -58,15 +58,16 @@
                     <div>
                         <label class="block text-slate-700 text-sm font-bold mb-2">Servicio a Cobrar</label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i
-                                    class="fas fa-search"></i></span>
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                <i class="fas fa-search"></i>
+                            </span>
                             <select name="id_servicio"
                                 class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 p-3 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent outline-none transition appearance-none"
                                 required>
                                 <option value="">-- Seleccionar Ticket --</option>
                                 @foreach ($serviciosPendientes as $servicio)
                                     <option value="{{ $servicio->id_servicio }}">
-                                        #{{ str_pad($servicio->id_servicio, 4, '0', STR_PAD_LEFT) }} -
+                                        #{{ str_pad($servicio->id_servicio, 5, '0', STR_PAD_LEFT) }} -
                                         {{ Str::limit($servicio->cliente->nombres, 20) }}
                                     </option>
                                 @endforeach
@@ -76,7 +77,7 @@
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1 ml-1">Solo muestra servicios activos/pendientes.</p>
+                        <p class="text-xs text-slate-400 mt-1 ml-1">Solo muestra servicios activos.</p>
                     </div>
 
                     <div>
@@ -138,8 +139,9 @@
                 <div class="px-6 py-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                     <h3 class="font-bold text-slate-700">Historial de Transacciones</h3>
                     <span
-                        class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full uppercase tracking-wide">Últimos
-                        Registros</span>
+                        class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full uppercase tracking-wide">
+                        Últimos Registros
+                    </span>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -164,7 +166,7 @@
                                     <td class="px-6 py-4">
                                         <a href="{{ route('servicios.show', $pago->id_servicio) }}"
                                             class="inline-flex items-center gap-1 font-mono font-bold text-indigo-600 hover:text-indigo-800 hover:underline bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                                            #{{ str_pad($pago->id_servicio, 4, '0', STR_PAD_LEFT) }}
+                                            #{{ str_pad($pago->id_servicio, 5, '0', STR_PAD_LEFT) }}
                                         </a>
                                         <div class="text-xs text-slate-400 mt-1">
                                             Por: {{ Str::limit($pago->registradoPor->email ?? 'Sistema', 15) }}
@@ -192,11 +194,13 @@
                                             </span>
                                         @else
                                             <form action="{{ route('pagos.validar', $pago->id_pago) }}" method="POST">
-                                                @csrf @method('PUT')
+                                                @csrf
+                                                @method('PUT')
+
                                                 <button type="submit"
                                                     class="group/btn relative inline-flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-bold text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all w-full"
                                                     title="Clic para confirmar recepción del dinero"
-                                                    onclick="return confirm('¿Confirmar que el dinero ha ingresado a caja?')">
+                                                    onclick="return confirm('¿Confirmar que el dinero ha ingresado a caja física?')">
 
                                                     <span class="group-hover/btn:hidden flex items-center gap-1">
                                                         <i class="fas fa-clock"></i> Pendiente

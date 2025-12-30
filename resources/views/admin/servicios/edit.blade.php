@@ -26,7 +26,6 @@
                     </span>
                     Modificar Solicitud
                 </h3>
-
                 @php
                     $statusColor = match ($servicio->estado) {
                         'PENDIENTE' => 'bg-slate-700 text-slate-200',
@@ -55,7 +54,6 @@
                     </h4>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
                         <div class="col-span-1">
                             <label class="block text-slate-500 text-sm font-bold mb-2">Cliente</label>
                             <div
@@ -80,19 +78,18 @@
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                    <i class="fas fa-chevron-down text-xs"></i></div>
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
                             </div>
                         </div>
 
                         <div class="col-span-1">
                             <label class="block text-slate-700 text-sm font-bold mb-2">Cambiar Estado</label>
                             <div class="relative">
-                                <select name="estado"
+                                <select name="estado" onchange="calcularTotalGeneral()"
                                     class="w-full bg-white border-2 border-slate-200 rounded-xl pl-3 pr-8 py-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition appearance-none">
                                     <option value="PENDIENTE" {{ $servicio->estado == 'PENDIENTE' ? 'selected' : '' }}>
                                         PENDIENTE</option>
-                                    <option value="COTIZANDO" {{ $servicio->estado == 'COTIZANDO' ? 'selected' : '' }}>
-                                        COTIZANDO</option>
                                     <option value="APROBADO" {{ $servicio->estado == 'APROBADO' ? 'selected' : '' }}>
                                         APROBADO</option>
                                     <option value="EN_PROCESO" {{ $servicio->estado == 'EN_PROCESO' ? 'selected' : '' }}>EN
@@ -104,7 +101,8 @@
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                    <i class="fas fa-chevron-down text-xs"></i></div>
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
                             </div>
                         </div>
 
@@ -123,7 +121,8 @@
                             class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-lg transition flex items-center gap-2 border border-slate-200">
                             <div
                                 class="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-slate-900 text-[10px]">
-                                <i class="fas fa-plus"></i></div>
+                                <i class="fas fa-plus"></i>
+                            </div>
                             Agregar Item
                         </button>
                     </div>
@@ -139,8 +138,7 @@
                                     <th class="px-4 py-3 font-bold w-1/12 text-center"></th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-200 bg-white" id="bodyMateriales">
-                            </tbody>
+                            <tbody class="divide-y divide-slate-200 bg-white" id="bodyMateriales"></tbody>
                         </table>
                         <div id="mensajeVacio" class="hidden px-4 py-8 text-center text-slate-400 italic">
                             <i class="fas fa-box-open text-2xl mb-2 opacity-50 block"></i>
@@ -151,7 +149,6 @@
                     <div class="flex justify-end">
                         <div
                             class="w-full md:w-1/3 bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4 shadow-sm">
-
                             <div class="flex justify-between items-center text-slate-500 text-sm">
                                 <span>Materiales:</span>
                                 <span class="font-medium" id="resumenMateriales">S/ 0.00</span>
@@ -159,7 +156,7 @@
 
                             <div class="flex justify-between items-center">
                                 <label class="text-slate-700 font-bold text-sm">Mano de Obra (S/):</label>
-                                <input type="number" step="0.01" min="0" name="mano_de_obra" id="manoDeObra"
+                                <input type="number" step="0.01" min="0" name="mano_obra" id="manoDeObra"
                                     class="w-32 bg-white border border-slate-300 rounded-lg p-2 text-right text-sm font-bold text-slate-700 focus:ring-2 focus:ring-yellow-400 outline-none transition"
                                     value="{{ number_format($servicio->mano_obra, 2, '.', '') }}"
                                     oninput="calcularTotalGeneral()">
@@ -171,8 +168,6 @@
                                     <span class="block text-2xl font-black text-slate-900" id="totalGeneralDisplay">S/
                                         0.00</span>
                                 </div>
-                                <input type="hidden" name="monto_cotizado" id="inputTotalGeneral"
-                                    value="{{ $servicio->monto_cotizado }}">
                                 <input type="hidden" name="costo_final_real" id="inputCostoFinal"
                                     value="{{ $servicio->costo_final_real }}">
                             </div>
@@ -187,7 +182,6 @@
                         <i class="fas fa-save text-yellow-400"></i>
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
@@ -295,9 +289,8 @@
 
             document.getElementById('resumenMateriales').innerText = 'S/ ' + totalMat.toFixed(2);
             document.getElementById('totalGeneralDisplay').innerText = 'S/ ' + total.toFixed(2);
-            document.getElementById('inputTotalGeneral').value = total.toFixed(2);
 
-            // Si el estado es FINALIZADO, actualizamos costo_final_real también
+            // CORRECCIÓN: Si el admin selecciona FINALIZADO, guardamos el total en costo_final_real
             const estado = document.querySelector('select[name="estado"]').value;
             if (estado === 'FINALIZADO') {
                 document.getElementById('inputCostoFinal').value = total.toFixed(2);

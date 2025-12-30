@@ -14,8 +14,7 @@
                 <p class="text-[10px] uppercase font-bold text-slate-400">Estado del Sistema</p>
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
-                        <span
-                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
                     <span class="text-xs font-bold text-slate-700">Operativo</span>
@@ -26,8 +25,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-        <div
-            class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
             <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <i class="fas fa-clipboard-list text-6xl text-slate-800"></i>
             </div>
@@ -40,14 +38,12 @@
             </div>
         </div>
 
-        <div
-            class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
             <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <i class="fas fa-clock text-6xl text-yellow-500"></i>
             </div>
             <div class="relative z-10">
-                <div
-                    class="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center mb-4 border border-yellow-100">
+                <div class="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center mb-4 border border-yellow-100">
                     <i class="fas fa-exclamation-circle text-xl"></i>
                 </div>
                 <h3 class="text-3xl font-bold text-slate-800">{{ $stats['pendientes'] ?? 0 }}</h3>
@@ -55,14 +51,12 @@
             </div>
         </div>
 
-        <div
-            class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-lg transition-all">
             <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <i class="fas fa-users text-6xl text-blue-500"></i>
             </div>
             <div class="relative z-10">
-                <div
-                    class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 border border-blue-100">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 border border-blue-100">
                     <i class="fas fa-hard-hat text-xl"></i>
                 </div>
                 <h3 class="text-3xl font-bold text-slate-800">{{ $stats['tecnicos'] ?? 0 }}</h3>
@@ -70,8 +64,7 @@
             </div>
         </div>
 
-        <div
-            class="bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-900/20 relative overflow-hidden group hover:-translate-y-1 transition-all">
+        <div class="bg-slate-900 rounded-2xl p-6 shadow-lg shadow-slate-900/20 relative overflow-hidden group hover:-translate-y-1 transition-all">
             <div class="absolute right-0 top-0 p-4 opacity-10">
                 <i class="fas fa-wallet text-6xl text-white"></i>
             </div>
@@ -90,8 +83,7 @@
         <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit">
             <div class="px-6 py-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                 <h3 class="font-bold text-slate-700">Actividad Reciente</h3>
-                <a href="{{ url('/servicios') }}" class="text-xs font-bold text-blue-600 hover:underline">Ver Todo
-                    &rarr;</a>
+                <a href="{{ route('servicios.index') }}" class="text-xs font-bold text-blue-600 hover:underline">Ver Todo &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
@@ -107,12 +99,10 @@
                         @forelse($recent_servicios ?? [] as $servicio)
                             <tr class="hover:bg-slate-50 transition group">
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-700">{{ $servicio->cliente->nombres ?? 'Eliminado' }}
-                                    </div>
+                                    <div class="font-bold text-slate-700">{{ $servicio->cliente->nombres ?? 'Eliminado' }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-slate-500 truncate max-w-[150px]"
-                                        title="{{ $servicio->descripcion_solicitud }}">
+                                    <div class="text-slate-500 truncate max-w-[150px]" title="{{ $servicio->descripcion_solicitud }}">
                                         {{ $servicio->descripcion_solicitud }}
                                     </div>
                                 </td>
@@ -126,8 +116,7 @@
                                             default => 'bg-gray-50 text-gray-500',
                                         };
                                     @endphp
-                                    <span
-                                        class="px-2 py-1 rounded text-[10px] font-bold uppercase {{ $statusClass }} border border-transparent group-hover:border-current">
+                                    <span class="px-2 py-1 rounded text-[10px] font-bold uppercase {{ $statusClass }} border border-transparent group-hover:border-current">
                                         {{ $servicio->estado }}
                                     </span>
                                 </td>
@@ -137,8 +126,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No hay actividad
-                                    reciente.</td>
+                                <td colspan="4" class="px-6 py-8 text-center text-slate-400 italic">No hay actividad reciente.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -150,10 +138,8 @@
             <h3 class="font-bold text-slate-700 mb-4">Acciones Rápidas</h3>
             <div class="space-y-3">
 
-                <a href="{{ url('/servicios/create') }}"
-                    class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-yellow-400 hover:bg-yellow-50 transition group">
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-yellow-400 group-hover:text-slate-900 transition">
+                <a href="{{ route('servicios.create') }}" class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-yellow-400 hover:bg-yellow-50 transition group">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-yellow-400 group-hover:text-slate-900 transition">
                         <i class="fas fa-plus"></i>
                     </div>
                     <div>
@@ -162,10 +148,8 @@
                     </div>
                 </a>
 
-                <a href="{{ url('/tecnicos') }}"
-                    class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition group">
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-500 group-hover:text-white transition">
+                <a href="{{ route('tecnicos.index') }}" class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition group">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-500 group-hover:text-white transition">
                         <i class="fas fa-user-plus"></i>
                     </div>
                     <div>
@@ -174,10 +158,8 @@
                     </div>
                 </a>
 
-                <a href="{{ url('/pagos') }}"
-                    class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition group">
-                    <div
-                        class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition">
+                <a href="{{ route('pagos.index') }}" class="flex items-center gap-4 p-3 rounded-xl border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition group">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition">
                         <i class="fas fa-cash-register"></i>
                     </div>
                     <div>

@@ -14,19 +14,24 @@ class Servicio extends Model
 
     protected $fillable = [
         'id_cliente',
-        'id_tecnico', // <--- Asegúrate de que este campo esté aquí
+        'id_tecnico',
         'descripcion_solicitud',
         'estado',
-        'mano_obra',
-        'monto_cotizado',
-        'fecha_solicitud',
-        'fecha_inicio',
-        'fecha_fin'
+        'mano_obra',          // <--- Confirmado
+        'costo_final_real',   // <--- Agregado
+        'fecha_solicitud',    // <--- Agregado
+        'fecha_aprobacion',   // <--- Agregado
+        'fecha_inicio',       // <--- Agregado
+        'fecha_fin',
     ];
 
     protected $casts = [
         'fecha_solicitud' => 'datetime',
+        'fecha_aprobacion' => 'datetime',
+        'fecha_inicio' => 'datetime', // <--- Importante para evitar el error
+        'fecha_fin' => 'datetime',    // <--- También útil
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     // Relación: Un servicio pertenece a UN cliente
@@ -53,7 +58,7 @@ class Servicio extends Model
     }
     public function materiales()
     {
-        return $this->belongsToMany(Material::class, 'servicio__materiales', 'id_servicio', 'id_material')
+        return $this->belongsToMany(Material::class, 'servicio_materiales', 'id_servicio', 'id_material')
             ->withPivot('cantidad', 'precio_unitario');
     }
 }

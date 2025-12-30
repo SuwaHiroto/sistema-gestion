@@ -68,11 +68,11 @@
                                     class="fas fa-lock"></i></span>
                             <input type="password" name="password" id="password"
                                 class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 p-3 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition"
-                                placeholder="Mínimo 8 caracteres">
+                                placeholder="Mínimo 6 caracteres">
                         </div>
                         <p class="text-xs text-orange-600 mt-2 hidden font-medium flex items-center gap-1"
                             id="passwordHint">
-                            <i class="fas fa-info-circle"></i> Déjalo vacío para mantener la contraseña actual.
+                            <i class="fas fa-info-circle"></i> Déjalo vacío para mantener la actual.
                         </p>
                     </div>
 
@@ -94,16 +94,24 @@
 
                     <div>
                         <label class="block text-slate-700 text-sm font-bold mb-2">Teléfono</label>
-                        <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}"
+                        <input type="text" name="telefono" id="telefono" value="{{ old('telefono') }}" maxlength="9"
                             class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-400 outline-none transition"
-                            maxlength="9" pattern="\d{9}" placeholder="999000111"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);">
+                            placeholder="999000111" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);">
                     </div>
 
                     <div>
                         <label class="block text-slate-700 text-sm font-bold mb-2">Dirección</label>
                         <textarea name="direccion" id="direccion" rows="3"
                             class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-400 outline-none transition resize-none">{{ old('direccion') }}</textarea>
+                    </div>
+
+                    <div id="divEstado" class="hidden">
+                        <label class="block text-slate-700 text-sm font-bold mb-2">Estado</label>
+                        <select name="estado" id="estado"
+                            class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-yellow-400 outline-none">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo / Baja</option>
+                        </select>
                     </div>
 
                     <button type="submit" id="btnSubmit"
@@ -120,7 +128,6 @@
 
                 <div
                     class="p-5 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-
                     <form action="{{ route('clientes.index') }}" method="GET" class="relative w-full max-w-md">
                         @if (request('ver_inactivos'))
                             <input type="hidden" name="ver_inactivos" value="1">
@@ -164,7 +171,6 @@
                             @forelse($clientes as $cli)
                                 <tr
                                     class="hover:bg-slate-50 transition duration-150 group {{ !$cli->estado ? 'bg-slate-50 opacity-60' : '' }}">
-
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
                                             <div class="relative">
@@ -206,14 +212,10 @@
                                     <td class="px-6 py-4 text-center">
                                         @if ($cli->estado)
                                             <span
-                                                class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
-                                                ACTIVO
-                                            </span>
+                                                class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">ACTIVO</span>
                                         @else
                                             <span
-                                                class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200">
-                                                BAJA
-                                            </span>
+                                                class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200">BAJA</span>
                                         @endif
                                     </td>
 
@@ -230,7 +232,7 @@
 
                                                 <form action="{{ route('clientes.destroy', $cli->id_cliente) }}"
                                                     method="POST" class="inline-block"
-                                                    onsubmit="return confirm('¿Desactivar a {{ $cli->nombres }}?');">
+                                                    onsubmit="return confirm('¿Dar de baja a {{ $cli->nombres }}? El usuario perderá acceso al sistema.');">
                                                     @csrf @method('DELETE')
                                                     <button type="submit"
                                                         class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:border-red-400 flex items-center justify-center transition shadow-sm"
@@ -240,7 +242,7 @@
                                                 </form>
                                             </div>
                                         @else
-                                            <span class="text-xs text-slate-400 italic">--</span>
+                                            <span class="text-xs text-slate-400 italic">Inactivo</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -270,42 +272,48 @@
 
     <script>
         function editarCliente(cliente, usuario) {
-            // 1. Cambios Visuales (Modo Edición: Amarillo Advertencia)
+            // 1. Elementos visuales
             const header = document.getElementById('headerForm');
             const btn = document.getElementById('btnSubmit');
             const title = document.getElementById('tituloForm');
+            const divEstado = document.getElementById('divEstado');
 
-            // Header: Cambia de Slate (Oscuro) a Yellow (Atención)
+            // 2. Cambiar estilos a "Modo Edición" (Amarillo)
             header.classList.remove('bg-slate-900', 'border-slate-800');
             header.classList.add('bg-yellow-500', 'border-yellow-600');
 
-            // Texto Header: Blanco -> Oscuro (para contraste)
             title.classList.remove('text-white');
             title.classList.add('text-slate-900');
             title.innerHTML = '<i class="fas fa-edit"></i> Editar Cliente';
 
-            // Botón: Slate -> Yellow
             btn.innerHTML = 'Guardar Cambios';
             btn.classList.remove('bg-slate-900', 'hover:bg-slate-800', 'text-white');
             btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
 
-            // 2. Mostrar ayudas
+            // 3. Mostrar campos extra
             document.getElementById('btnCancelar').classList.remove('hidden');
             document.getElementById('passwordHint').classList.remove('hidden');
-            document.getElementById('password').removeAttribute('required');
+            document.getElementById('password').removeAttribute('required'); // Password opcional al editar
+            divEstado.classList.remove('hidden'); // Permitir reactivar si se desea
 
-            // 3. Rellenar Datos
+            // 4. Rellenar Datos
             document.getElementById('nombres').value = cliente.nombres;
             document.getElementById('telefono').value = cliente.telefono;
             document.getElementById('direccion').value = cliente.direccion;
-            if (usuario) document.getElementById('email').value = usuario.email;
+            document.getElementById('estado').value = cliente.estado ? '1' : '0';
 
-            // 4. Configurar Ruta UPDATE (PUT)
-            document.getElementById('formCliente').action =
-            `/admin/clientes/${cliente.id_cliente}`; // Verifica que el prefijo sea /admin/ si usas esa ruta
+            if (usuario) {
+                document.getElementById('email').value = usuario.email;
+            }
+
+            // 5. Configurar Ruta UPDATE (PUT)
+            const baseUrl = "{{ route('clientes.index') }}";
+            document.getElementById('formCliente').action = `${baseUrl}/${cliente.id_cliente}`;
+
+            // Inyectar método PUT
             document.getElementById('methodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
 
-            // 5. Scroll suave al formulario
+            // 6. Scroll arriba
             header.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
@@ -313,21 +321,19 @@
         }
 
         function limpiarFormulario() {
-            // 1. Restaurar Visuales (Modo Crear: Slate Corporativo)
+            // 1. Restaurar estilos a "Modo Crear" (Slate)
             const header = document.getElementById('headerForm');
             const btn = document.getElementById('btnSubmit');
             const title = document.getElementById('tituloForm');
+            const divEstado = document.getElementById('divEstado');
 
-            // Header: Yellow -> Slate
             header.classList.add('bg-slate-900', 'border-slate-800');
             header.classList.remove('bg-yellow-500', 'border-yellow-600');
 
-            // Texto Header
             title.classList.add('text-white');
             title.classList.remove('text-slate-900');
             title.innerHTML = '<i class="fas fa-user-plus text-yellow-400"></i> Nuevo Cliente';
 
-            // Botón
             btn.innerHTML = '<span>Registrar Cliente</span> <i class="fas fa-arrow-right"></i>';
             btn.classList.add('bg-slate-900', 'hover:bg-slate-800', 'text-white');
             btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'text-slate-900', 'shadow-yellow-500/30');
@@ -335,12 +341,13 @@
             // 2. Ocultar extras
             document.getElementById('btnCancelar').classList.add('hidden');
             document.getElementById('passwordHint').classList.add('hidden');
-            document.getElementById('password').setAttribute('required', 'required');
+            document.getElementById('password').setAttribute('required', 'required'); // Password obligatorio al crear
+            divEstado.classList.add('hidden');
 
-            // 3. Limpiar Campos
+            // 3. Limpiar Campos y Ruta
             document.getElementById('formCliente').reset();
             document.getElementById('formCliente').action = "{{ route('clientes.store') }}";
-            document.getElementById('methodField').innerHTML = '';
+            document.getElementById('methodField').innerHTML = ''; // Quitar PUT
         }
     </script>
 @endsection

@@ -14,7 +14,7 @@
     </div>
 
     @if (session('error'))
-        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 text-sm shadow-sm">
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 text-sm shadow-sm animate-pulse">
             <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
         </div>
     @endif
@@ -23,6 +23,7 @@
         @forelse($servicios as $servicio)
             @php
                 $isWorking = $servicio->estado == 'EN_PROCESO';
+                // Estilos dinámicos según estado
                 $cardClasses = $isWorking
                     ? 'border-yellow-400 ring-1 ring-yellow-400/50 shadow-yellow-100'
                     : 'border-slate-200 hover:border-slate-300';
@@ -49,12 +50,20 @@
 
                     @if ($isWorking)
                         <span
-                            class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2.5 py-1 rounded uppercase tracking-wide border border-yellow-200">
-                            <i class="fas fa-tools mr-1"></i> En Ejecución
+                            class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2.5 py-1 rounded uppercase tracking-wide border border-yellow-200 flex items-center gap-1">
+                            <i class="fas fa-tools animate-spin-slow"></i> En Ejecución
                         </span>
                     @else
+                        @php
+                            $badgeColor = match ($servicio->estado) {
+                                'PENDIENTE' => 'bg-slate-100 text-slate-600 border-slate-200',
+                                'APROBADO' => 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                                'FINALIZADO' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                                default => 'bg-gray-100 text-gray-600',
+                            };
+                        @endphp
                         <span
-                            class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide border border-slate-200">
+                            class="{{ $badgeColor }} text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wide border">
                             {{ $servicio->estado }}
                         </span>
                     @endif
@@ -71,7 +80,7 @@
                     <div>
                         <p class="text-xs font-bold text-slate-400 uppercase">Ubicación</p>
                         <p class="text-sm text-slate-700 font-medium leading-snug">
-                            {{ Str::limit($servicio->cliente->direccion, 45) }}
+                            {{ Str::limit($servicio->cliente->direccion ?? 'Sin dirección', 45) }}
                         </p>
                     </div>
                 </div>
@@ -79,7 +88,11 @@
                 <div class="flex justify-between items-center pt-3 border-t border-slate-100/50">
                     <div class="text-xs text-slate-500 font-medium flex items-center gap-1.5">
                         <i class="far fa-clock text-slate-400"></i>
-                        {{ $servicio->fecha_inicio ? $servicio->fecha_inicio->format('h:i A') : 'Sin hora' }}
+                        @if ($servicio->fecha_inicio)
+                            {{ $servicio->fecha_inicio->format('h:i A') }}
+                        @else
+                            <span class="italic">--:--</span>
+                        @endif
                     </div>
 
                     <div

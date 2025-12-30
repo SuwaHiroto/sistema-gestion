@@ -9,7 +9,7 @@
         <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight">
-                    Hola, <span class="text-yellow-400">{{ Auth::user()->name }}</span>
+                    Hola, <span class="text-yellow-400">{{ Auth::user()->name ?? 'Cliente' }}</span>
                 </h1>
                 <p class="text-slate-300 mt-2 text-sm md:text-base max-w-xl">
                     Bienvenido a tu panel de gestión eléctrica. Aquí puedes monitorear el progreso de tus instalaciones y
@@ -55,7 +55,7 @@
             class="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-4 mb-8 rounded-r-lg shadow-sm flex items-center animate-fade-in-down">
             <i class="fas fa-check-circle mr-3 text-xl"></i>
             <div>
-                <p class="font-bold">¡Operación exitosa!</p>
+                <p class="font-bold">¡Solicitud Enviada!</p>
                 <p class="text-sm">{{ session('success') }}</p>
             </div>
         </div>
@@ -64,58 +64,45 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($servicios as $servicio)
             @php
-                // Lógica de estilos centralizada y semántica
+                // Lógica de estilos según estado
                 $config = match ($servicio->estado) {
                     'PENDIENTE' => [
                         'border' => 'border-l-gray-400',
                         'text' => 'text-gray-600',
-                        'bg' => 'bg-gray-100',
                         'icon' => 'fa-clock',
                         'label' => 'En Revisión',
-                    ],
-                    'COTIZANDO' => [
-                        'border' => 'border-l-blue-400',
-                        'text' => 'text-blue-600',
-                        'bg' => 'bg-blue-50',
-                        'icon' => 'fa-file-invoice-dollar',
-                        'label' => 'Cotizando',
                     ],
                     'APROBADO' => [
                         'border' => 'border-l-indigo-500',
                         'text' => 'text-indigo-600',
-                        'bg' => 'bg-indigo-50',
                         'icon' => 'fa-thumbs-up',
                         'label' => 'Aprobado',
                     ],
                     'EN_PROCESO' => [
                         'border' => 'border-l-yellow-500',
                         'text' => 'text-yellow-700',
-                        'bg' => 'bg-yellow-50',
                         'icon' => 'fa-tools',
                         'label' => 'En Ejecución',
                     ],
                     'FINALIZADO' => [
                         'border' => 'border-l-emerald-500',
                         'text' => 'text-emerald-700',
-                        'bg' => 'bg-emerald-50',
                         'icon' => 'fa-check-circle',
                         'label' => 'Finalizado',
                     ],
                     default => [
                         'border' => 'border-l-gray-300',
                         'text' => 'text-gray-500',
-                        'bg' => 'bg-gray-50',
                         'icon' => 'fa-circle',
                         'label' => $servicio->estado,
                     ],
                 };
 
-                // Cálculo simple de progreso visual
+                // Barra de progreso visual
                 $progress = match ($servicio->estado) {
-                    'PENDIENTE' => '5%',
-                    'COTIZANDO' => '25%',
-                    'APROBADO' => '50%',
-                    'EN_PROCESO' => '75%',
+                    'PENDIENTE' => '10%',
+                    'APROBADO' => '40%',
+                    'EN_PROCESO' => '70%',
                     'FINALIZADO' => '100%',
                     default => '0%',
                 };
@@ -129,8 +116,9 @@
                 <div class="p-6 flex-1">
                     <div class="flex justify-between items-start mb-4 pl-2">
                         <div>
-                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ticket
-                                #{{ str_pad($servicio->id_servicio, 5, '0', STR_PAD_LEFT) }}</span>
+                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                Ticket #{{ str_pad($servicio->id_servicio, 5, '0', STR_PAD_LEFT) }}
+                            </span>
                             <div class="mt-1 flex items-center gap-1.5 {{ $config['text'] }}">
                                 <i class="fas {{ $config['icon'] }} text-xs"></i>
                                 <span class="text-xs font-bold uppercase">{{ $config['label'] }}</span>
@@ -138,7 +126,7 @@
                         </div>
                         <div
                             class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-slate-900 group-hover:text-yellow-400 transition-colors">
-                            <i class="fas fa-plug text-sm"></i>
+                            <i class="fas fa-bolt text-sm"></i>
                         </div>
                     </div>
 
@@ -148,7 +136,7 @@
 
                     <div class="flex items-center gap-2 text-xs text-gray-500 mb-5">
                         <i class="far fa-calendar-alt"></i>
-                        <span>Solicitado: {{ $servicio->created_at->format('d M Y') }}</span>
+                        <span>Solicitado: {{ $servicio->created_at->format('d/m/Y') }}</span>
                     </div>
 
                     <div class="space-y-1">
@@ -165,15 +153,12 @@
 
                 <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-between items-center pl-6">
                     <div>
-                        @if ($servicio->mano_obra > 0 || $servicio->monto_cotizado > 0)
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">Total Estimado</p>
-                            <p class="text-sm font-black text-slate-800">
-                                S/ {{ number_format($servicio->mano_obra + $servicio->monto_cotizado, 2) }}
+                        @if ($servicio->mano_obra > 0)
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Costo Servicio Base</p>
+                            <p class="text-sm font-black text-slate-800">S/ {{ number_format($servicio->mano_obra, 2) }}
                             </p>
                         @else
-                            <p class="text-xs text-gray-400 italic flex items-center gap-1">
-                                <i class="fas fa-spinner fa-spin text-[10px]"></i> Calculando...
-                            </p>
+                            <p class="text-xs text-gray-400 italic">Por cotizar</p>
                         @endif
                     </div>
 
@@ -189,16 +174,15 @@
                 <div
                     class="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-2xl border-2 border-dashed border-gray-300 text-center">
                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-bolt text-4xl text-gray-300"></i>
+                        <i class="fas fa-clipboard text-4xl text-gray-300"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-800">Todo en orden por aquí</h3>
+                    <h3 class="text-xl font-bold text-gray-800">Todo limpio por aquí</h3>
                     <p class="text-gray-500 max-w-md mt-2 mb-8">
-                        No tienes servicios activos o pendientes. Si necesitas una instalación, reparación o mantenimiento,
-                        estamos listos.
+                        No tienes servicios registrados. ¿Necesitas ayuda con una instalación o reparación?
                     </p>
                     <button onclick="document.getElementById('modalSolicitud').classList.remove('hidden')"
                         class="text-blue-600 font-bold hover:text-blue-800 hover:underline flex items-center gap-2">
-                        <span>Iniciar una solicitud</span> <i class="fas fa-arrow-right"></i>
+                        <span>Crear solicitud ahora</span> <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
@@ -211,9 +195,9 @@
 
         <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-
                 <div
                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+
                     <div class="bg-slate-900 px-6 py-4 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-white flex items-center gap-2">
                             <i class="fas fa-bolt text-yellow-400"></i> Nuevo Servicio
@@ -229,15 +213,13 @@
                         <div class="p-6">
                             <div class="mb-2">
                                 <label class="block text-slate-700 text-sm font-bold mb-2">¿En qué podemos ayudarte?</label>
-                                <textarea name="descripcion_solicitud" rows="5"
+                                <textarea name="descripcion" rows="5"
                                     class="w-full bg-slate-50 border border-slate-300 rounded-xl p-4 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition placeholder-slate-400 resize-none"
-                                    placeholder="Ej: Hola, necesito instalar 5 luminarias LED en mi oficina y revisar un tomacorriente que hace cortocircuito..."
-                                    required></textarea>
+                                    placeholder="Ej: Hola, necesito instalar 5 luminarias LED en mi oficina y revisar un tomacorriente..." required></textarea>
                             </div>
                             <div class="flex justify-between items-center">
-                                <p class="text-xs text-slate-400"><i class="fas fa-info-circle mr-1"></i> Sé lo más
-                                    detallado posible.</p>
-                                <span class="text-xs text-slate-400">Mín. 5 caracteres</span>
+                                <p class="text-xs text-slate-400"><i class="fas fa-info-circle mr-1"></i> Mínimo 5
+                                    caracteres.</p>
                             </div>
                         </div>
 

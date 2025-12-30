@@ -10,8 +10,6 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TecnicoPanelController;
 use App\Http\Controllers\MaterialController;
 
-
-
 // PÁGINA DE INICIO (Pública)
 Route::get('/', function () {
     return view('welcome');
@@ -24,55 +22,60 @@ Route::middleware([
     'verified',
 ])->group(function () {
 
-    // 1. DASHBOARD
-
+    // 1. DASHBOARD GLOBAL
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. SERVICIOS (Admin)
+
+    // --- ZONA ADMINISTRADOR ---
+
+    // Servicios (CRUD Completo)
     Route::resource('servicios', ServicioController::class);
 
-    // 3. TÉCNICOS (Admin)
-    Route::get('/tecnicos', [TecnicoController::class, 'index'])->name('tecnicos.index');
-    Route::post('/tecnicos', [TecnicoController::class, 'store'])->name('tecnicos.store');
-    Route::put('/tecnicos/{id}', [TecnicoController::class, 'update'])->name('tecnicos.update');
+    // Técnicos (Gestión de Personal)
+    Route::prefix('tecnicos')->name('tecnicos.')->group(function () {
+        Route::get('/', [TecnicoController::class, 'index'])->name('index');
+        Route::post('/', [TecnicoController::class, 'store'])->name('store');
+        Route::put('/{id}', [TecnicoController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TecnicoController::class, 'destroy'])->name('destroy');
+    });
 
+    // Clientes (Gestión Administrativa) - ¡AQUÍ FALTABA EL PUT!
+    Route::prefix('clientes')->name('clientes.')->group(function () {
+        Route::get('/', [ClienteController::class, 'indexAdmin'])->name('index');
+        Route::post('/', [ClienteController::class, 'storeAdmin'])->name('store');
+        Route::put('/{id}', [ClienteController::class, 'updateAdmin'])->name('update'); // <--- CORRECCIÓN IMPORTANTE
+        Route::delete('/{id}', [ClienteController::class, 'destroy'])->name('destroy');
+    });
 
-    // 4. PAGOS (Admin)
+    // Materiales (Catálogo)
+    Route::resource('materiales', MaterialController::class)->except(['create', 'edit', 'show']);
+
+    // Pagos y Tesorería
     Route::get('/pagos', [PagoController::class, 'index'])->name('pagos.index');
     Route::post('/pagos', [PagoController::class, 'store'])->name('pagos.store');
+    Route::put('/pagos/{id}/validar', [PagoController::class, 'validar'])->name('pagos.validar'); // Validar pago
 
-    // NUEVA RUTA DE VALIDACIÓN
-    Route::put('/pagos/{id}/validar', [PagoController::class, 'validar'])->name('pagos.validar');
-
-    // 5. REPORTES Y CLIENTES (Admin)
+    // Reportes
     Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
 
-    // Gestión de Clientes (Admin)
-    Route::get('/clientes', [ClienteController::class, 'indexAdmin'])->name('clientes.index');
-    Route::post('/clientes', [ClienteController::class, 'storeAdmin'])->name('clientes.store'); // Si agregaste este método
-    // Si no tienes storeAdmin, usa la ruta que tenías antes o crea el método en el controlador
-    // Ruta para la baja lógica (DELETE)
-    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
-    Route::get('/mis-servicios/{id}', [App\Http\Controllers\ClienteController::class, 'show'])->name('cliente.servicios.show');
 
-    // Gestión de Materiales (Admin)
-    Route::get('/materiales', [MaterialController::class, 'index'])->name('materiales.index');
-    Route::post('/materiales', [MaterialController::class, 'store'])->name('materiales.store');
-    Route::put('/materiales/{id}', [MaterialController::class, 'update'])->name('materiales.update');
+    // --- ZONA CLIENTE ---
+    Route::prefix('mi-cuenta')->name('cliente.')->group(function () {
+        Route::get('/', [ClienteController::class, 'index'])->name('index');
+        Route::post('/solicitar', [ClienteController::class, 'store'])->name('servicios.store');
+        Route::get('/servicio/{id}', [ClienteController::class, 'show'])->name('servicios.show');
 
-    // 6. ÁREA CLIENTE (Mi Cuenta)
-    Route::get('/mi-cuenta', [ClienteController::class, 'index'])->name('cliente.index');
-    Route::post('/mi-cuenta/solicitar', [ClienteController::class, 'store'])->name('cliente.servicios.store');
+        // Completar Perfil (Primer uso)
+        Route::get('/completar-perfil', [ClienteController::class, 'showCompleteProfile'])->name('complete.show');
+        Route::post('/completar-perfil', [ClienteController::class, 'storeCompleteProfile'])->name('complete.store');
+    });
 
-    // Completar perfil Cliente
-    Route::get('/completar-perfil', [ClienteController::class, 'showCompleteProfile'])->name('cliente.complete.show');
-    Route::post('/completar-perfil', [ClienteController::class, 'storeCompleteProfile'])->name('cliente.complete.store');
 
-    // 7. ÁREA TÉCNICO (Panel de Trabajo)
-    // ESTAS SON LAS RUTAS QUE FALTABAN O ESTABAN INCOMPLETAS
-    Route::get('/tecnico', [TecnicoPanelController::class, 'index'])->name('tecnico.index');
-    Route::delete('/tecnicos/{id}', [TecnicoController::class, 'destroy'])->name('tecnicos.destroy');
-    Route::get('/tecnico/{id}', [TecnicoPanelController::class, 'show'])->name('tecnico.show');
-    Route::put('/tecnico/{id}', [TecnicoPanelController::class, 'update'])->name('tecnico.update'); // <--- ESTA ES LA RUTA CRÍTICA
-    Route::post('/tecnico/{id}/pago', [TecnicoPanelController::class, 'storePago'])->name('tecnico.pago.store');
+    // --- ZONA TÉCNICO ---
+    Route::prefix('tecnico')->name('tecnico.')->group(function () {
+        Route::get('/', [TecnicoPanelController::class, 'index'])->name('index');
+        Route::get('/{id}', [TecnicoPanelController::class, 'show'])->name('show');
+        Route::put('/{id}', [TecnicoPanelController::class, 'update'])->name('update'); // Iniciar/Finalizar/Materiales
+        Route::post('/{id}/pago', [TecnicoPanelController::class, 'storePago'])->name('pago.store'); // Cobrar en sitio
+    });
 });

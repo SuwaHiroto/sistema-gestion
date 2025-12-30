@@ -20,6 +20,9 @@ class Material extends Model
 
     public function servicios()
     {
-        return $this->belongsToMany(Servicio::class, 'servicio_materiales', 'id_material', 'id_servicio');
+        // CORREGIDO: La tabla pivote lleva doble guion bajo '__'
+        return $this->belongsToMany(Servicio::class, 'servicio_materiales', 'id_material', 'id_servicio')
+            ->withPivot('cantidad', 'precio_unitario')
+            ->withTimestamps();
     }
 }

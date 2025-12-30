@@ -6,7 +6,7 @@
             <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Gestión de Servicios</h2>
             <p class="text-slate-500 mt-1">Control de solicitudes, asignación de técnicos y facturación.</p>
         </div>
-        <a href="{{ url('/servicios/create') }}"
+        <a href="{{ route('servicios.create') }}"
             class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
             <div class="bg-yellow-400 text-slate-900 rounded-full w-5 h-5 flex items-center justify-center text-xs">
                 <i class="fas fa-plus"></i>
@@ -26,12 +26,14 @@
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
         <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <div class="relative w-full max-w-sm">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i
-                        class="fas fa-search"></i></span>
-                <input type="text" placeholder="Buscar por cliente o ID..."
-                    class="w-full bg-white border border-slate-300 rounded-lg pl-10 p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition">
-            </div>
+            <form action="{{ route('servicios.index') }}" method="GET" class="relative w-full max-w-sm">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" name="search" value="{{ request('search') }}"
+                    placeholder="Buscar por cliente, ID o descripción..."
+                    class="w-full bg-white border border-slate-300 rounded-lg pl-10 p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition shadow-sm">
+            </form>
             <div class="text-xs font-bold text-slate-500 uppercase bg-white border border-slate-200 px-3 py-1 rounded">
                 Total: {{ $servicios->total() }}
             </div>
@@ -54,29 +56,30 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($servicios as $servicio)
                         @php
-                            // Lógica de Costos (Mantenida del original)
+                            // 1. Calcular Costo de Materiales
                             $costoMateriales = $servicio->materiales->sum(
                                 fn($m) => $m->pivot->cantidad * $m->pivot->precio_unitario,
                             );
-                            $total =
-                                $servicio->costo_final_real > 0
-                                    ? $servicio->costo_final_real
-                                    : $servicio->monto_cotizado;
-                            $manoObra = max(0, $total - $costoMateriales);
 
-                            // Lógica de Estados (Diseño Industrial)
+                            // 2. Obtener Mano de Obra (Si es null es 0)
+                            $manoObra = $servicio->mano_obra ?? 0;
+
+                            // 3. Calcular Total
+                            // Si ya finalizó, confiamos en el costo_final_real guardado
+                            // Si no, calculamos la suma actual
+                            if ($servicio->estado === 'FINALIZADO' && $servicio->costo_final_real > 0) {
+                                $total = $servicio->costo_final_real;
+                            } else {
+                                $total = $costoMateriales + $manoObra;
+                            }
+
+                            // 4. Estilos de Estado
                             $statusConfig = match ($servicio->estado) {
                                 'PENDIENTE' => [
                                     'bg' => 'bg-slate-100',
                                     'text' => 'text-slate-600',
                                     'border' => 'border-slate-200',
                                     'icon' => 'fa-clock',
-                                ],
-                                'COTIZANDO' => [
-                                    'bg' => 'bg-blue-50',
-                                    'text' => 'text-blue-600',
-                                    'border' => 'border-blue-100',
-                                    'icon' => 'fa-calculator',
                                 ],
                                 'APROBADO' => [
                                     'bg' => 'bg-indigo-50',
@@ -114,10 +117,10 @@
                         <tr class="bg-white hover:bg-slate-50 transition duration-150 group">
 
                             <td class="px-6 py-4">
-                                <span
-                                    class="font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-1 rounded text-xs">
+                                <a href="{{ route('servicios.show', $servicio->id_servicio) }}"
+                                    class="font-mono font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded text-xs">
                                     #{{ str_pad($servicio->id_servicio, 4, '0', STR_PAD_LEFT) }}
-                                </span>
+                                </a>
                             </td>
 
                             <td class="px-6 py-4">
@@ -126,10 +129,10 @@
                                 </div>
                                 <div class="text-xs text-slate-500 truncate max-w-[200px]"
                                     title="{{ $servicio->descripcion_solicitud }}">
-                                    {{ $servicio->descripcion_solicitud }}
+                                    {{ Str::limit($servicio->descripcion_solicitud, 40) }}
                                 </div>
                                 <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                                    <i class="far fa-calendar"></i> {{ $servicio->created_at->format('d M Y') }}
+                                    <i class="far fa-calendar"></i> {{ $servicio->created_at->format('d/m/Y') }}
                                 </div>
                             </td>
 
@@ -174,11 +177,18 @@
                             </td>
 
                             <td class="px-6 py-4 text-center">
-                                <a href="{{ route('servicios.show', $servicio->id_servicio) }}"
-                                    class="text-slate-400 hover:text-yellow-600 transition-colors p-2 rounded-full hover:bg-yellow-50"
-                                    title="Ver Detalles">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
+                                <div class="flex justify-center gap-2">
+                                    <a href="{{ route('servicios.show', $servicio->id_servicio) }}"
+                                        class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-yellow-600 hover:border-yellow-400 flex items-center justify-center transition shadow-sm"
+                                        title="Ver Detalles">
+                                        <i class="fas fa-eye text-xs"></i>
+                                    </a>
+                                    <a href="{{ route('servicios.edit', $servicio->id_servicio) }}"
+                                        class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center transition shadow-sm"
+                                        title="Editar">
+                                        <i class="fas fa-pen text-xs"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -193,7 +203,7 @@
                                     <p class="text-sm text-slate-400 max-w-xs mx-auto mt-1">No hay solicitudes registradas
                                         en el sistema actualmente.</p>
 
-                                    <a href="{{ url('/servicios/create') }}"
+                                    <a href="{{ route('servicios.create') }}"
                                         class="mt-4 text-sm font-bold text-yellow-600 hover:underline">
                                         Crear la primera solicitud
                                     </a>

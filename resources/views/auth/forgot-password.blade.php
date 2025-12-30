@@ -1,34 +1,118 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+<!DOCTYPE html>
+<html lang="es">
 
-        <div class="mb-4 text-sm text-gray-600">
-            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - ElectriGonza</title>
+    <link rel="icon" href="{{ asset('/images/favicon.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div
+        class="bg-white rounded-3xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row border border-slate-200">
+
+        <div
+            class="hidden md:flex md:w-5/12 bg-slate-900 relative flex-col justify-between p-12 text-white overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent z-10"></div>
+            <div class="absolute -bottom-10 -left-10 text-yellow-500/10 z-0">
+                <i class="fas fa-key text-[250px]"></i>
+            </div>
+
+            <div class="relative z-20 flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+                    <img src="{{ asset('/images/logo.png') }}" alt="Logo"
+                        class="w-6 h-6 object-contain brightness-0 invert">
+                </div>
+                <span class="font-bold text-lg tracking-wide">
+                    Electri<span class="text-yellow-400">Gonza</span>
+                </span>
+            </div>
+
+            <div class="relative z-20 mb-8">
+                <h2 class="text-3xl font-bold leading-tight mb-4">
+                    Recuperar <br> Acceso.
+                </h2>
+                <p class="text-slate-400 text-sm">
+                    Te enviaremos un enlace seguro para que puedas establecer una nueva contraseña.
+                </p>
+            </div>
+
+            <div class="relative z-20 text-xs text-slate-500">
+                &copy; {{ date('Y') }} Servicios Generales S.A.C.
+            </div>
         </div>
 
-        @session('status')
-            <div class="mb-4 font-medium text-sm text-green-600">
-                {{ $value }}
+        <div class="w-full md:w-7/12 p-8 md:p-12 bg-white relative flex flex-col justify-center">
+
+            <div class="max-w-sm mx-auto w-full">
+
+                <div class="mb-8">
+                    <a href="{{ route('login') }}"
+                        class="inline-flex items-center text-sm text-slate-400 hover:text-slate-700 transition mb-6">
+                        <i class="fas fa-arrow-left mr-2"></i> Volver al Login
+                    </a>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">¿Olvidaste tu contraseña?</h3>
+                    <p class="text-slate-500 text-sm">No te preocupes. Ingresa tu correo y te ayudaremos.</p>
+                </div>
+
+                @if (session('status'))
+                    <div
+                        class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-4 rounded-xl border border-green-100 flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        {{ session('status') }}
+                    </div>
+                @endif
+
+                <x-validation-errors class="mb-4 bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100" />
+
+                <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
+                    @csrf
+
+                    <div>
+                        <label for="email" class="block text-sm font-bold text-slate-700 mb-2">Correo
+                            Electrónico</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="far fa-envelope text-slate-400"></i>
+                            </div>
+                            <input id="email" type="email" name="email" :value="old('email')" required
+                                autofocus
+                                class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent outline-none transition placeholder-slate-400"
+                                placeholder="ejemplo@correo.com">
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-slate-900/20 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <span>Enviar Enlace de Recuperación</span>
+                        <i class="fas fa-paper-plane text-yellow-400"></i>
+                    </button>
+                </form>
             </div>
-        @endsession
+        </div>
+    </div>
+</body>
 
-        <x-validation-errors class="mb-4" />
-
-        <form method="POST" action="{{ route('password.email') }}">
-            @csrf
-
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <x-button>
-                    {{ __('Email Password Reset Link') }}
-                </x-button>
-            </div>
-        </form>
-    </x-authentication-card>
-</x-guest-layout>
+</html>
